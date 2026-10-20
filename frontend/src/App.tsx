@@ -123,6 +123,7 @@ function App() {
         return selectedApplicationId ? (
           <LiveApplicationDetailPage
             applicationId={selectedApplicationId}
+            csrfToken={session.user!.csrf_token}
             onBack={() => setSelectedApplicationId(null)}
           />
         ) : (

@@ -6,20 +6,25 @@ import {
   type ApiTimelineEvent,
 } from '../api/applications'
 import { ApiError } from '../api/http'
+import EditApplicationForm from '../components/applications/EditApplicationForm'
 
 interface Props {
   applicationId: string
+  csrfToken: string
   onBack: () => void
 }
 
 export default function LiveApplicationDetailPage({
   applicationId,
+  csrfToken,
   onBack,
 }: Props) {
   const [application, setApplication] = useState<ApiApplication | null>(null)
   const [events, setEvents] = useState<ApiTimelineEvent[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [reloadVersion, setReloadVersion] = useState(0)
 
   useEffect(() => {
     let current = true
@@ -50,7 +55,7 @@ export default function LiveApplicationDetailPage({
     return () => {
       current = false
     }
-  }, [applicationId])
+  }, [applicationId, reloadVersion])
 
   if (loading)
     return (
@@ -76,50 +81,79 @@ export default function LiveApplicationDetailPage({
       <button type='button' className='back-button' onClick={onBack}>
         Back to applications
       </button>
-      <div className='detail-heading'>
-        <div>
-          <p className='detail-eyebrow'>{application.current_stage}</p>
-          <h2>{application.job_title}</h2>
-          <p>
-            {application.company_name}
-            {application.location ? ` · ${application.location}` : ''}
-          </p>
+      {editing ? (
+        <div className='detail-panel'>
+          <h2>Edit Application</h2>
+          <EditApplicationForm
+            key={application.id}
+            application={application}
+            csrfToken={csrfToken}
+            onCancel={() => setEditing(false)}
+            onSaved={() => {
+              setEditing(false)
+              setReloadVersion((value) => value + 1)
+            }}
+          />
         </div>
-        <span className='detail-owner'>{application.next_action_owner}</span>
-      </div>
-      <div className='detail-grid'>
-        <article className='detail-card'>
-          <h3>Application</h3>
-          <dl>
-            <dt>Source</dt>
-            <dd>{application.application_source}</dd>
-            <dt>Applied</dt>
-            <dd>{application.applied_at ?? 'Not recorded'}</dd>
-            <dt>Last activity</dt>
-            <dd>{new Date(application.last_activity_at).toLocaleString()}</dd>
-            <dt>Notes</dt>
-            <dd>{application.notes ?? 'No notes'}</dd>
-          </dl>
-        </article>
-        <article className='detail-card'>
-          <h3>Timeline</h3>
-          {events.length === 0 ? (
-            <p>No timeline events recorded.</p>
-          ) : (
-            <ol className='live-timeline'>
-              {events.map((event) => (
-                <li key={event.id}>
-                  <strong>{event.event_kind.replaceAll('_', ' ')}</strong>
-                  <time dateTime={event.occurred_at}>
-                    {new Date(event.occurred_at).toLocaleString()}
-                  </time>
-                  {event.details && <p>{JSON.stringify(event.details)}</p>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </article>
-      </div>
+      ) : (
+        <>
+          <div className='detail-heading detail-intro'>
+            <div>
+              <p className='detail-eyebrow'>{application.current_stage}</p>
+              <h2>{application.job_title}</h2>
+              <p>
+                {application.company_name}
+                {application.location ? ` · ${application.location}` : ''}
+              </p>
+            </div>
+            <span className='detail-owner'>
+              {application.next_action_owner}
+            </span>
+            <button
+              type='button'
+              className='primary-action'
+              onClick={() => setEditing(true)}
+            >
+              Edit Application
+            </button>
+          </div>
+          <div className='detail-grid'>
+            <article className='detail-card'>
+              <h3>Application</h3>
+              <dl>
+                <dt>Source</dt>
+                <dd>{application.application_source}</dd>
+                <dt>Applied</dt>
+                <dd>{application.applied_at ?? 'Not recorded'}</dd>
+                <dt>Last activity</dt>
+                <dd>
+                  {new Date(application.last_activity_at).toLocaleString()}
+                </dd>
+                <dt>Notes</dt>
+                <dd>{application.notes ?? 'No notes'}</dd>
+              </dl>
+            </article>
+            <article className='detail-card'>
+              <h3>Timeline</h3>
+              {events.length === 0 ? (
+                <p>No timeline events recorded.</p>
+              ) : (
+                <ol className='live-timeline'>
+                  {events.map((event) => (
+                    <li key={event.id}>
+                      <strong>{event.event_kind.replaceAll('_', ' ')}</strong>
+                      <time dateTime={event.occurred_at}>
+                        {new Date(event.occurred_at).toLocaleString()}
+                      </time>
+                      {event.details && <p>{JSON.stringify(event.details)}</p>}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </article>
+          </div>
+        </>
+      )}
     </section>
   )
 }

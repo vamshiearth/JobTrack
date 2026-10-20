@@ -61,6 +61,15 @@ export interface CreateApplicationPayload {
   notes?: string | null
 }
 
+export interface UpdateApplicationPayload {
+  company_name?: string
+  job_title?: string
+  location?: string | null
+  job_url?: string | null
+  applied_at?: string | null
+  notes?: string | null
+}
+
 export function createApplication(
   payload: CreateApplicationPayload,
   csrfToken: string,
@@ -73,6 +82,24 @@ export function createApplication(
     },
     body: JSON.stringify(payload),
   })
+}
+
+export function updateApplication(
+  applicationId: string,
+  payload: UpdateApplicationPayload,
+  csrfToken: string,
+) {
+  return apiRequest<ApiApplication>(
+    `/api/v1/applications/${encodeURIComponent(applicationId)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+      },
+      body: JSON.stringify(payload),
+    },
+  )
 }
 
 export function getApplications(query: ApplicationQuery) {

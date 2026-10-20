@@ -394,7 +394,7 @@
 .form-row input:disabled,
 .form-row textarea:disabled {
   background: #f8fafc;
-  opacity: .7;
+  opacity: 0.7;
 }
 .form-actions {
   display: flex;
@@ -422,6 +422,23 @@
     flex-direction: column-reverse;
   }
   .form-actions button {
+    width: 100%;
+  }
+}
+.form-helper-text {
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 3px solid #2563eb;
+  background: #eff6ff;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.detail-intro .primary-action {
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .detail-intro .primary-action {
     width: 100%;
   }
 }
