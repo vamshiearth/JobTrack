@@ -1,15 +1,18 @@
-import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.auth_cookies import clear_session_cookie, set_session_cookie
 from app.core.config import get_settings
 from app.db.session import get_db
+from app.dependencies.auth import AuthContext, get_auth_context, get_current_user_id
 from app.models import OAuthLoginTransaction
 from app.services.google_identity import AccountLinkingRequired, resolve_google_user
+from app.services.auth_session_service import csrf_for_session, issue_session, revoke_session
 from app.services.google_oauth import (
     OAuthVerificationError,
     build_google_auth_url,
@@ -104,19 +107,31 @@ async def google_callback(
             client_id=settings.google_oauth_client_id,
             expected_nonce=transaction.nonce,
         )
-        resolve_google_user(
+        user = resolve_google_user(
             db,
             subject=claims["sub"],
             email=claims["email"],
             display_name=claims["display_name"],
         )
+        raw_session_token = issue_session(
+            db, user=user, lifetime_days=settings.auth_session_days
+        )
         db.commit()
-    except (OAuthVerificationError, KeyError, AccountLinkingRequired) as exc:
+    except AccountLinkingRequired as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="ACCOUNT_LINKING_REQUIRED") from exc
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="ACCOUNT_CONFLICT") from exc
+    except (OAuthVerificationError, KeyError) as exc:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google identity verification failed") from exc
 
-    response = JSONResponse({"authenticated": False, "identity_verified": True})
+    response = RedirectResponse(
+        settings.auth_frontend_url.rstrip("/"), status_code=status.HTTP_303_SEE_OTHER
+    )
     response.delete_cookie(OAUTH_COOKIE, path=OAUTH_COOKIE_PATH)
+    set_session_cookie(response, raw_session_token)
     return response
 
 
@@ -124,3 +139,37 @@ def secrets_compare(left: str, right: str) -> bool:
     import hmac
 
     return hmac.compare_digest(left, right)
+
+
+session_router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+@session_router.get("/me")
+def get_authenticated_user(context: AuthContext = Depends(get_auth_context)):
+    response = JSONResponse(
+        {
+            "id": str(context.user.id),
+            "email": context.user.email,
+            "display_name": context.user.display_name,
+            "csrf_token": csrf_for_session(context.raw_token),
+        }
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@session_router.post("/logout")
+def logout(
+    context: AuthContext = Depends(get_auth_context),
+    _user_id=Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    try:
+        revoke_session(db, context.session)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    response = JSONResponse({"logged_out": True})
+    clear_session_cookie(response)
+    return response

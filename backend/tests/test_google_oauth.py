@@ -47,6 +47,9 @@ def oauth_settings(monkeypatch):
         google_oauth_redirect_uri="http://localhost:8000/api/v1/auth/google/callback",
         auth_oauth_transaction_minutes=10,
         auth_cookie_secure=False,
+        auth_cookie_name="jobtrack_session",
+        auth_session_days=7,
+        auth_frontend_url="http://localhost:5173",
     )
     monkeypatch.setattr(auth, "get_settings", lambda: settings)
     return settings
@@ -103,7 +106,10 @@ def test_callback_consumes_transaction_before_exchange(db_context, oauth_setting
 
     with TestClient(app) as client:
         client.cookies.set(auth.OAUTH_COOKIE, state)
-        response = client.get(f"/api/v1/auth/google/callback?code=code&state={state}")
+        response = client.get(
+            f"/api/v1/auth/google/callback?code=code&state={state}",
+            follow_redirects=False,
+        )
 
     assert response.status_code == 400
     assert db_context.get(OAuthLoginTransaction, transaction.id).consumed_at is not None
@@ -122,13 +128,16 @@ def test_callback_replay_and_expired_transaction_are_rejected(db_context, oauth_
 
     with TestClient(app) as client:
         client.cookies.set(auth.OAUTH_COOKIE, state)
-        response = client.get(f"/api/v1/auth/google/callback?code=code&state={state}")
+        response = client.get(
+            f"/api/v1/auth/google/callback?code=code&state={state}",
+            follow_redirects=False,
+        )
 
     assert response.status_code == 400
     assert transaction.consumed_at is None
 
 
-def test_verified_identity_does_not_create_application_session(db_context, oauth_settings, monkeypatch):
+def test_verified_identity_creates_session_and_me_returns_user(db_context, oauth_settings, monkeypatch):
     state, nonce, verifier = generate_oauth_secrets()
     transaction = OAuthLoginTransaction(
         state_hash=hashlib.sha256(state.encode()).digest(),
@@ -150,11 +159,25 @@ def test_verified_identity_does_not_create_application_session(db_context, oauth
 
     with TestClient(app) as client:
         client.cookies.set(auth.OAUTH_COOKIE, state)
-        response = client.get(f"/api/v1/auth/google/callback?code=code&state={state}")
+        response = client.get(
+            f"/api/v1/auth/google/callback?code=code&state={state}",
+            follow_redirects=False,
+        )
 
-    assert response.status_code == 200
-    assert response.json() == {"authenticated": False, "identity_verified": True}
+    assert response.status_code == 303
+    assert response.headers["location"] == "http://localhost:5173"
+    cookie_header = response.headers["set-cookie"]
+    assert "jobtrack_session=" in cookie_header
+    assert "HttpOnly" in cookie_header
+    assert "Path=/api/v1" in cookie_header
+    assert "SameSite=lax" in cookie_header
     assert response.cookies.get(auth.OAUTH_COOKIE) is None
+    with TestClient(app) as client:
+        client.cookies.update(response.cookies)
+        me = client.get("/api/v1/auth/me")
+    assert me.status_code == 200
+    assert me.json()["email"] == "new@example.com"
+    assert me.json()["csrf_token"]
     assert db_context.scalar(select(User).where(User.google_sub == "google-sub")) is not None
 
 

@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     auth_session_days: int = 7
     auth_oauth_transaction_minutes: int = 10
     auth_cookie_secure: bool = False
+    auth_trusted_origins: list[str] = ["http://localhost:5173"]
 
     model_config = SettingsConfigDict(
         env_file=BACKEND_DIR / ".env",
