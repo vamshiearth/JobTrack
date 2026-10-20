@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     google_oauth_redirect_uri: str = (
         "http://localhost:8000/api/v1/auth/google/callback"
     )
+    gmail_oauth_client_id: str | None = None
+    gmail_oauth_client_secret: str | None = None
+    gmail_oauth_redirect_uri: str = "http://localhost:8000/api/v1/gmail/callback"
+    gmail_oauth_scope: str = "https://www.googleapis.com/auth/gmail.metadata"
+    gmail_token_encryption_keys: str | None = None
+    gmail_initial_sync_limit: int = Field(default=100, ge=1)
+    gmail_sync_enabled: bool = False
     auth_frontend_url: str = "http://localhost:5173"
     auth_cookie_name: str = "jobtrack_session"
     auth_session_days: int = 7
