@@ -52,6 +52,29 @@ export interface ApplicationQuery {
   sortOrder: 'asc' | 'desc'
 }
 
+export interface CreateApplicationPayload {
+  company_name: string
+  job_title: string
+  location?: string | null
+  job_url?: string | null
+  applied_at?: string | null
+  notes?: string | null
+}
+
+export function createApplication(
+  payload: CreateApplicationPayload,
+  csrfToken: string,
+) {
+  return apiRequest<ApiApplication>('/api/v1/applications', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken,
+    },
+    body: JSON.stringify(payload),
+  })
+}
+
 export function getApplications(query: ApplicationQuery) {
   const params = new URLSearchParams({
     page: String(query.page),

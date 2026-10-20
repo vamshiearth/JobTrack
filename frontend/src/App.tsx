@@ -5,6 +5,7 @@ import InboxPage from './pages/InboxPage'
 import SettingsPage from './pages/SettingsPage'
 import LiveApplicationsPage from './pages/LiveApplicationsPage'
 import LiveApplicationDetailPage from './pages/LiveApplicationDetailPage'
+import AddApplicationForm from './components/applications/AddApplicationForm'
 import { getBackendHealth } from './api/client'
 import { startGoogleLogin } from './api/auth'
 import { useSession } from './auth/useSession'
@@ -19,6 +20,7 @@ function App() {
     string | null
   >(null)
   const [backendStatus, setBackendStatus] = useState<BackendStatus>('checking')
+  const [isAddingApplication, setIsAddingApplication] = useState(false)
   const session = useSession()
   const mainRef = useRef<HTMLElement>(null)
   const initialRender = useRef(true)
@@ -66,12 +68,20 @@ function App() {
   }, [activePage, selectedApplicationId])
 
   function navigateTo(page: PageId) {
+    setIsAddingApplication(false)
     setSelectedApplicationId(null)
     setActivePage(page)
   }
 
   function viewApplication(applicationId: string) {
+    setIsAddingApplication(false)
     setSelectedApplicationId(applicationId)
+    setActivePage('applications')
+  }
+
+  function openAddApplication() {
+    setSelectedApplicationId(null)
+    setIsAddingApplication(true)
     setActivePage('applications')
   }
 
@@ -91,13 +101,35 @@ function App() {
           </section>
         )
       case 'applications': {
+        if (isAddingApplication) {
+          return (
+            <section className='applications-page'>
+              <div className='applications-intro'>
+                <div>
+                  <h2>Add Job Application</h2>
+                  <p>Save an application to your account.</p>
+                </div>
+              </div>
+              <div className='applications-panel'>
+                <AddApplicationForm
+                  csrfToken={session.user!.csrf_token}
+                  onCancel={() => setIsAddingApplication(false)}
+                  onCreated={viewApplication}
+                />
+              </div>
+            </section>
+          )
+        }
         return selectedApplicationId ? (
           <LiveApplicationDetailPage
             applicationId={selectedApplicationId}
             onBack={() => setSelectedApplicationId(null)}
           />
         ) : (
-          <LiveApplicationsPage onViewDetails={viewApplication} />
+          <LiveApplicationsPage
+            onViewDetails={viewApplication}
+            onAddApplication={openAddApplication}
+          />
         )
       }
       case 'timeline':

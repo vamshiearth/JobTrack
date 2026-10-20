@@ -8,6 +8,7 @@ import { ApiError } from '../api/http'
 
 interface Props {
   onViewDetails: (id: string) => void
+  onAddApplication: () => void
 }
 
 const initialQuery: ApplicationQuery = {
@@ -20,7 +21,10 @@ const initialQuery: ApplicationQuery = {
   sortOrder: 'desc',
 }
 
-export default function LiveApplicationsPage({ onViewDetails }: Props) {
+export default function LiveApplicationsPage({
+  onViewDetails,
+  onAddApplication,
+}: Props) {
   const [query, setQuery] = useState(initialQuery)
   const [data, setData] = useState<ApiApplicationList | null>(null)
   const [loading, setLoading] = useState(true)
@@ -68,6 +72,9 @@ export default function LiveApplicationsPage({ onViewDetails }: Props) {
           <h2>My Applications</h2>
           <p>Your saved applications from JobTrack.</p>
         </div>
+        <button type='button' className='primary-action' onClick={onAddApplication}>
+          + Add Application
+        </button>
       </div>
       <div className='applications-panel'>
         <div className='applications-toolbar'>
