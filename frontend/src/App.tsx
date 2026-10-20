@@ -85,7 +85,7 @@ function App() {
         return <ApplicationsPage onViewDetails={viewApplication} />
       }
       case 'timeline':
-        return <TimelinePage />
+        return <TimelinePage onViewApplication={viewApplication} />
       case 'inbox':
         return <InboxPage />
       case 'settings':
