@@ -3,6 +3,7 @@ export type PageId =
   | 'applications'
   | 'timeline'
   | 'inbox'
+  | 'reviews'
   | 'settings'
 
 export interface NavigationItem {
@@ -16,5 +17,6 @@ export const navigationItems: NavigationItem[] = [
   { id: 'applications', label: 'Applications', icon: '▣' },
   { id: 'timeline', label: 'Timeline', icon: '▤' },
   { id: 'inbox', label: 'Email Inbox', icon: '✉' },
+  { id: 'reviews', label: 'Recruitment Reviews', icon: '✓' },
   { id: 'settings', label: 'Settings', icon: '⚙' },
 ]

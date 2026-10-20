@@ -5,6 +5,7 @@ from app.api.v1.applications import router as applications_router
 from app.api.v1.auth import router as auth_router, session_router
 from app.api.v1.events import router as events_router
 from app.api.v1.gmail import router as gmail_router
+from app.api.v1.review_items import router as review_items_router
 from app.core.error_handlers import register_error_handlers
 
 
@@ -33,6 +34,7 @@ app.include_router(events_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(session_router, prefix="/api/v1")
 app.include_router(gmail_router, prefix="/api/v1")
+app.include_router(review_items_router, prefix="/api/v1")
 
 
 @app.get("/api/health", tags=["Health"])

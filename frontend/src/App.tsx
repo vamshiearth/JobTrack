@@ -8,6 +8,7 @@ import LiveApplicationDetailPage from './pages/LiveApplicationDetailPage'
 import LiveDashboardPage from './pages/LiveDashboardPage'
 import LiveTimelinePage from './pages/LiveTimelinePage'
 import AddApplicationForm from './components/applications/AddApplicationForm'
+import ReviewQueuePage from './pages/ReviewQueuePage'
 import { getBackendHealth } from './api/client'
 import { startGoogleLogin } from './api/auth'
 import { useSession } from './auth/useSession'
@@ -133,6 +134,13 @@ function App() {
         return <LiveTimelinePage onViewApplication={viewApplication} />
       case 'inbox':
         return <InboxPage />
+      case 'reviews':
+        return (
+          <ReviewQueuePage
+            csrfToken={session.user!.csrf_token}
+            onViewApplication={viewApplication}
+          />
+        )
       case 'settings':
         return <SettingsPage />
     }
