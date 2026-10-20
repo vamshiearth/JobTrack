@@ -46,7 +46,11 @@ function App() {
   function renderPage() {
     switch (activePage) {
       case 'dashboard':
-        return <DashboardPage />
+        return (
+          <DashboardPage
+            onViewApplications={() => setActivePage('applications')}
+          />
+        )
       case 'applications':
         return <ApplicationsPage />
       case 'timeline':
