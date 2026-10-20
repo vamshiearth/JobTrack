@@ -48,12 +48,12 @@ Gmail authorization is a separate future feature.
 
 ## Planned Authentication Endpoints
 
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| GET | `/api/v1/auth/google/login` | Start Google sign-in |
-| GET | `/api/v1/auth/google/callback` | Validate OAuth response and create session |
-| GET | `/api/v1/auth/me` | Return authenticated user information |
-| POST | `/api/v1/auth/logout` | Revoke current session |
+| Method | Endpoint                       | Purpose                                    |
+| ------ | ------------------------------ | ------------------------------------------ |
+| GET    | `/api/v1/auth/google/login`    | Start Google sign-in                       |
+| GET    | `/api/v1/auth/google/callback` | Validate OAuth response and create session |
+| GET    | `/api/v1/auth/me`              | Return authenticated user information      |
+| POST   | `/api/v1/auth/logout`          | Revoke current session                     |
 
 The existing `get_current_user_id()` dependency must continue returning `401`
 until authenticated database-session resolution is fully implemented and tested.

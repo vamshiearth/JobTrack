@@ -7,6 +7,7 @@ from app.models.entities import (
     ReviewItem,
     User,
 )
+from app.models.auth import AuthSession, OAuthLoginTransaction
 
 __all__ = [
     "User",
@@ -16,4 +17,6 @@ __all__ = [
     "JobApplication",
     "ApplicationEvent",
     "ReviewItem",
+    "AuthSession",
+    "OAuthLoginTransaction",
 ]

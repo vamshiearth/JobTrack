@@ -9,6 +9,8 @@ from app.models import (
     GmailSyncState,
     JobApplication,
     ReviewItem,
+    AuthSession,
+    OAuthLoginTransaction,
     User,
 )
 
@@ -16,17 +18,28 @@ from app.models import (
 def test_all_expected_tables_are_registered():
     assert sorted(Base.metadata.tables) == [
         "application_events",
+        "auth_sessions",
         "email_messages",
         "gmail_connections",
         "gmail_sync_states",
         "job_applications",
+        "oauth_login_transactions",
         "review_items",
         "users",
     ]
 
 
 def test_each_model_has_uuid_primary_key_except_sync_state():
-    for model in (User, GmailConnection, EmailMessage, JobApplication, ApplicationEvent, ReviewItem):
+    for model in (
+        User,
+        GmailConnection,
+        EmailMessage,
+        JobApplication,
+        ApplicationEvent,
+        ReviewItem,
+        AuthSession,
+        OAuthLoginTransaction,
+    ):
         assert [column.name for column in model.__table__.primary_key] == ["id"]
         assert str(model.id.type) == "UUID"
 

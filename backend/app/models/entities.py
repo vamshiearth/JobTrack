@@ -42,6 +42,7 @@ class User(Base):
 
     id: Mapped[uuid.UUID] = uuid_column()
     email: Mapped[str] = mapped_column(String(320), nullable=False)
+    google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
     display_name: Mapped[str | None] = mapped_column(String(200))
     created_at: Mapped[datetime] = timestamp_column()
     updated_at: Mapped[datetime] = timestamp_column()

@@ -14,6 +14,16 @@ class Settings(BaseSettings):
     db_name: str = "jobtrack_db"
     db_user: str = "jobtrack_user"
     db_password: SecretStr
+    google_oauth_client_id: str | None = None
+    google_oauth_client_secret: str | None = None
+    google_oauth_redirect_uri: str = (
+        "http://localhost:8000/api/v1/auth/google/callback"
+    )
+    auth_frontend_url: str = "http://localhost:5173"
+    auth_cookie_name: str = "jobtrack_session"
+    auth_session_days: int = 7
+    auth_oauth_transaction_minutes: int = 10
+    auth_cookie_secure: bool = False
 
     model_config = SettingsConfigDict(
         env_file=BACKEND_DIR / ".env",
