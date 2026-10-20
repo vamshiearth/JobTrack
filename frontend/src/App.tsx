@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react'
-import { getBackendHealth, type HealthResponse } from './api/client'
+import Sidebar from './components/layout/Sidebar'
+import Header from './components/layout/Header'
+import ApplicationsPage from './pages/ApplicationsPage'
+import DashboardPage from './pages/DashboardPage'
+import InboxPage from './pages/InboxPage'
+import SettingsPage from './pages/SettingsPage'
+import TimelinePage from './pages/TimelinePage'
+import { getBackendHealth } from './api/client'
+import type { PageId } from './types/navigation'
 import './App.css'
 
-type ConnectionState = 'checking' | 'connected' | 'disconnected'
+type BackendStatus = 'checking' | 'connected' | 'disconnected'
 
 function App() {
-  const [connectionState, setConnectionState] =
-    useState<ConnectionState>('checking')
-  const [health, setHealth] = useState<HealthResponse | null>(null)
+  const [activePage, setActivePage] = useState<PageId>('dashboard')
+  const [backendStatus, setBackendStatus] = useState<BackendStatus>('checking')
 
   useEffect(() => {
     let active = true
@@ -18,16 +25,14 @@ function App() {
 
         if (!active) return
 
-        setHealth(result)
-        setConnectionState(
+        setBackendStatus(
           result.status === 'healthy' ? 'connected' : 'disconnected',
         )
       } catch (error) {
         if (!active) return
 
         console.error('Backend health check failed:', error)
-        setHealth(null)
-        setConnectionState('disconnected')
+        setBackendStatus('disconnected')
       }
     }
 
@@ -38,42 +43,29 @@ function App() {
     }
   }, [])
 
-  const statusTitle =
-    connectionState === 'checking'
-      ? 'Checking Backend...'
-      : connectionState === 'connected'
-        ? 'Backend Connected'
-        : 'Backend Disconnected'
+  function renderPage() {
+    switch (activePage) {
+      case 'dashboard':
+        return <DashboardPage />
+      case 'applications':
+        return <ApplicationsPage />
+      case 'timeline':
+        return <TimelinePage />
+      case 'inbox':
+        return <InboxPage />
+      case 'settings':
+        return <SettingsPage />
+    }
+  }
 
   return (
-    <main className='app-container'>
-      <div className='app-card'>
-        <div className='logo'>JT</div>
-        <h1>JobTrack</h1>
-        <p className='subtitle'>Intelligent Job Application Tracking System</p>
-        <div className='status-card'>
-          <span className={`status-indicator ${connectionState}`} />
-          <div>
-            <h3>{statusTitle}</h3>
-            <p>
-              {connectionState === 'connected'
-                ? `${health?.service} - v${health?.version}`
-                : connectionState === 'checking'
-                  ? 'Contacting FastAPI server...'
-                  : 'Unable to reach FastAPI server'}
-            </p>
-          </div>
-        </div>
-        <div className='coming-soon'>
-          <h2>Your Job Search, Organized.</h2>
-          <p>
-            Track applications, recruiter responses, assessments, interviews,
-            and offers from one dashboard.
-          </p>
-        </div>
-        <footer>JobTrack v0.1.0 - Development Environment</footer>
+    <div className='app-layout'>
+      <Sidebar activePage={activePage} onNavigate={setActivePage} />
+      <div className='app-main'>
+        <Header activePage={activePage} backendStatus={backendStatus} />
+        <main className='app-content'>{renderPage()}</main>
       </div>
-    </main>
+    </div>
   )
 }
 
