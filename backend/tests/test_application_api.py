@@ -107,7 +107,7 @@ def test_list_empty_for_user_without_applications(api_context):
     response = TestClient(app).get("/api/v1/applications")
 
     assert response.status_code == 200
-    assert response.json() == {"items": [], "total": 0}
+    assert response.json() == {"items": [], "total": 0, "page": 1, "page_size": 20}
 
 
 def test_service_list_is_user_scoped(api_context):
@@ -119,4 +119,6 @@ def test_service_list_is_user_scoped(api_context):
     )
 
     assert response.status_code == 201
-    assert len(list_applications(db, user_id=user_b.id)) == 0
+    applications, total = list_applications(db, user_id=user_b.id)
+    assert applications == []
+    assert total == 0

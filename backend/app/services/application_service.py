@@ -1,11 +1,16 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models import JobApplication
-from app.schemas.application import ApplicationCreate, ApplicationUpdate
+from app.schemas.application import (
+    ApplicationCreate,
+    ApplicationStage,
+    ApplicationUpdate,
+    NextActionOwner,
+)
 
 
 def create_application(
@@ -50,14 +55,47 @@ def list_applications(
     db: Session,
     *,
     user_id: UUID,
-) -> list[JobApplication]:
-    return list(
+    q: str | None = None,
+    stage: ApplicationStage | None = None,
+    next_action_owner: NextActionOwner | None = None,
+    page: int = 1,
+    page_size: int = 20,
+    sort_by: str = "last_activity_at",
+    sort_order: str = "desc",
+) -> tuple[list[JobApplication], int]:
+    filters = [JobApplication.user_id == user_id]
+    if q is not None and q.strip():
+        search_term = q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        pattern = f"%{search_term}%"
+        filters.append(
+            or_(
+                JobApplication.company_name.ilike(pattern, escape="\\"),
+                JobApplication.job_title.ilike(pattern, escape="\\"),
+            )
+        )
+    if stage is not None:
+        filters.append(JobApplication.current_stage == stage.value)
+    if next_action_owner is not None:
+        filters.append(JobApplication.next_action_owner == next_action_owner.value)
+
+    sort_column = {
+        "last_activity_at": JobApplication.last_activity_at,
+        "applied_at": JobApplication.applied_at,
+        "company_name": JobApplication.company_name,
+    }[sort_by]
+    order_by = sort_column.asc() if sort_order == "asc" else sort_column.desc()
+    total = db.scalar(select(func.count()).select_from(JobApplication).where(*filters)) or 0
+    offset = (page - 1) * page_size
+    applications = list(
         db.scalars(
             select(JobApplication)
-            .where(JobApplication.user_id == user_id)
-            .order_by(JobApplication.created_at.desc(), JobApplication.id)
+            .where(*filters)
+            .order_by(order_by, JobApplication.id)
+            .offset(offset)
+            .limit(page_size)
         ).all()
     )
+    return applications, total
 
 
 def count_applications(db: Session, *, user_id: UUID) -> int:

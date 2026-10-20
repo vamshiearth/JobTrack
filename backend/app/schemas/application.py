@@ -88,3 +88,5 @@ class ApplicationResponse(BaseModel):
 class ApplicationListResponse(BaseModel):
     items: list[ApplicationResponse]
     total: int
+    page: int
+    page_size: int

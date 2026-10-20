@@ -1,7 +1,9 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from typing import Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -11,7 +13,9 @@ from app.schemas.application import (
     ApplicationCreate,
     ApplicationListResponse,
     ApplicationResponse,
+    ApplicationStage,
     ApplicationUpdate,
+    NextActionOwner,
 )
 from app.services.application_service import (
     create_application,
@@ -49,11 +53,33 @@ def create_job_application(
 
 @router.get("", response_model=ApplicationListResponse)
 def get_job_applications(
+    q: str | None = Query(default=None, max_length=200),
+    stage: ApplicationStage | None = None,
+    next_action_owner: NextActionOwner | None = None,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    sort_by: Literal["last_activity_at", "applied_at", "company_name"] = "last_activity_at",
+    sort_order: Literal["asc", "desc"] = "desc",
     user_id: uuid.UUID = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    applications = list_applications(db, user_id=user_id)
-    return ApplicationListResponse(items=applications, total=len(applications))
+    applications, total = list_applications(
+        db,
+        user_id=user_id,
+        q=q,
+        stage=stage,
+        next_action_owner=next_action_owner,
+        page=page,
+        page_size=page_size,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
+    return ApplicationListResponse(
+        items=applications,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.get("/{application_id}", response_model=ApplicationResponse)
