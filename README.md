@@ -7,16 +7,19 @@ JobTrack is a full-stack application designed to organize job applications and e
 ## Technology Stack
 
 ### Frontend
+
 - React
 - TypeScript
 - Vite
 
 ### Backend
+
 - Python
 - FastAPI
 - Pydantic
 
 ### Planned integrations
+
 - PostgreSQL
 - SQLAlchemy
 - Alembic
