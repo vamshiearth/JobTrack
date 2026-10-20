@@ -190,7 +190,7 @@ class ApplicationEvent(Base):
     __tablename__ = "application_events"
     __table_args__ = (
         CheckConstraint(
-            "event_kind IN ('APPLICATION_SUBMITTED', 'RECRUITER_CONTACTED', 'ASSESSMENT_INVITED', 'ASSESSMENT_COMPLETED', 'INTERVIEW_SCHEDULED', 'INTERVIEW_COMPLETED', 'OFFER_RECEIVED', 'REJECTION_RECEIVED', 'MANUAL_CORRECTION')",
+            "event_kind IN ('APPLICATION_SUBMITTED', 'RECRUITER_CONTACTED', 'ASSESSMENT_INVITED', 'ASSESSMENT_COMPLETED', 'INTERVIEW_SCHEDULED', 'INTERVIEW_COMPLETED', 'OFFER_RECEIVED', 'REJECTION_RECEIVED', 'APPLICATION_WITHDRAWN', 'MANUAL_CORRECTION')",
             name="event_kind_valid",
         ),
         CheckConstraint("interview_round IS NULL OR interview_round > 0", name="interview_round_positive"),
