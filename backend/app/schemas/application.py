@@ -59,7 +59,7 @@ class ApplicationUpdate(BaseModel):
     @classmethod
     def reject_blank_text(cls, value: str | None) -> str | None:
         if value is None:
-            return value
+            raise ValueError("must not be null")
         value = value.strip()
         if not value:
             raise ValueError("must not be blank")

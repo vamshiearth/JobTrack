@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import JobApplication
-from app.schemas.application import ApplicationCreate
+from app.schemas.application import ApplicationCreate, ApplicationUpdate
 
 
 def create_application(
@@ -64,3 +64,40 @@ def count_applications(db: Session, *, user_id: UUID) -> int:
     return db.scalar(
         select(func.count()).select_from(JobApplication).where(JobApplication.user_id == user_id)
     ) or 0
+
+
+def update_application(
+    db: Session,
+    *,
+    user_id: UUID,
+    application_id: UUID,
+    data: ApplicationUpdate,
+) -> JobApplication | None:
+    application = get_application(db, user_id=user_id, application_id=application_id)
+    if application is None:
+        return None
+
+    changes = data.model_dump(exclude_unset=True)
+    for field, value in changes.items():
+        if field == "job_url" and value is not None:
+            value = str(value)
+        setattr(application, field, value)
+
+    if changes:
+        application.updated_at = datetime.now(timezone.utc)
+        db.flush()
+    return application
+
+
+def delete_application(
+    db: Session,
+    *,
+    user_id: UUID,
+    application_id: UUID,
+) -> bool:
+    application = get_application(db, user_id=user_id, application_id=application_id)
+    if application is None:
+        return False
+    db.delete(application)
+    db.flush()
+    return True
