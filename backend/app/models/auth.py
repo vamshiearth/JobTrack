@@ -41,3 +41,22 @@ class OAuthLoginTransaction(Base):
     expires_at: Mapped[datetime] = mapped_column(Timestamp, nullable=False)
     created_at: Mapped[datetime] = mapped_column(Timestamp, nullable=False, server_default=func.now())
     consumed_at: Mapped[datetime | None] = mapped_column(Timestamp)
+
+
+class GmailOAuthTransaction(Base):
+    __tablename__ = "gmail_oauth_transactions"
+    __table_args__ = (
+        UniqueConstraint("state_hash", name="uq_gmail_oauth_transactions_state_hash"),
+        Index("ix_gmail_oauth_transactions_expires_at", "expires_at"),
+        Index("ix_gmail_oauth_transactions_user_id", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    auth_session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("auth_sessions.id"), nullable=False)
+    state_hash: Mapped[bytes] = mapped_column(LargeBinary(32), nullable=False)
+    nonce: Mapped[str] = mapped_column(String(255), nullable=False)
+    pkce_code_verifier: Mapped[str] = mapped_column(String(128), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(Timestamp, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(Timestamp, nullable=False, server_default=func.now())
+    consumed_at: Mapped[datetime | None] = mapped_column(Timestamp)

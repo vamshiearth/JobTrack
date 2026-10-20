@@ -21,6 +21,7 @@ def test_all_expected_tables_are_registered():
         "auth_sessions",
         "email_messages",
         "gmail_connections",
+        "gmail_oauth_transactions",
         "gmail_sync_states",
         "job_applications",
         "oauth_login_transactions",

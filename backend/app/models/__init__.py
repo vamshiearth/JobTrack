@@ -7,7 +7,7 @@ from app.models.entities import (
     ReviewItem,
     User,
 )
-from app.models.auth import AuthSession, OAuthLoginTransaction
+from app.models.auth import AuthSession, GmailOAuthTransaction, OAuthLoginTransaction
 
 __all__ = [
     "User",
@@ -19,4 +19,5 @@ __all__ = [
     "ReviewItem",
     "AuthSession",
     "OAuthLoginTransaction",
+    "GmailOAuthTransaction",
 ]
