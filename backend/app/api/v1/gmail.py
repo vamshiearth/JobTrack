@@ -3,13 +3,13 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.dependencies.auth import AuthContext, get_auth_context
-from app.models import GmailConnection, GmailOAuthTransaction
+from app.models import EmailMessage, GmailConnection, GmailOAuthTransaction
 from app.services.gmail_oauth import (
     GMAIL_METADATA_SCOPE,
     GmailOAuthError,
@@ -19,6 +19,12 @@ from app.services.gmail_oauth import (
 )
 from app.services.gmail_token_crypto import get_gmail_token_crypto
 from app.services.google_oauth import generate_oauth_secrets, sha256_bytes
+from app.services.gmail_sync_service import (
+    GmailSyncBusy,
+    GmailSyncNotEligible,
+    GmailSyncUnavailable,
+    sync_gmail_connection,
+)
 
 router = APIRouter(prefix="/gmail", tags=["Gmail"])
 CONSENT_COOKIE = "jobtrack_gmail_consent"
@@ -33,7 +39,7 @@ def callback_error(detail: str, code: int = 400) -> JSONResponse:
 
 @router.get("/connection")
 def connection(context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)):
-    item = db.scalar(select(GmailConnection).where(GmailConnection.user_id == context.user.id, GmailConnection.connection_status != "DISCONNECTED"))
+    item = db.scalar(select(GmailConnection).where(GmailConnection.user_id == context.user.id))
     if item is None:
         return {"connected": False, "email": None, "status": "DISCONNECTED", "granted_scopes": [], "last_synced_at": None}
     return {"connected": True, "email": item.email_address, "status": item.connection_status, "granted_scopes": item.granted_scopes, "last_synced_at": item.sync_state.last_successful_sync_at if item.sync_state else None}
@@ -104,7 +110,7 @@ async def callback(request: Request, code: str | None = None, state: str | None 
 
 @router.post("/disconnect")
 def disconnect(context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)):
-    item = db.scalar(select(GmailConnection).where(GmailConnection.user_id == context.user.id, GmailConnection.connection_status != "DISCONNECTED"))
+    item = db.scalar(select(GmailConnection).where(GmailConnection.user_id == context.user.id))
     if item is not None:
         item.connection_status = "DISCONNECTED"
         item.encrypted_refresh_token = None
@@ -112,3 +118,29 @@ def disconnect(context: AuthContext = Depends(get_auth_context), db: Session = D
     db.execute(update(GmailOAuthTransaction).where(GmailOAuthTransaction.user_id == context.user.id, GmailOAuthTransaction.consumed_at.is_(None)).values(consumed_at=datetime.now(timezone.utc)))
     db.commit()
     return {"status": "DISCONNECTED"}
+
+
+@router.get("/sync-status")
+def sync_status(context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)):
+    item = db.scalar(select(GmailConnection).where(GmailConnection.user_id == context.user.id))
+    if item is None:
+        return {"connected": False, "sync_enabled": False, "last_successful_sync_at": None, "last_sync_status": "NOT_STARTED", "message_count": 0, "requires_reconnection": False}
+    state = item.sync_state
+    count = db.scalar(select(func.count()).select_from(EmailMessage).where(EmailMessage.gmail_connection_id == item.id))
+    return {"connected": True, "sync_enabled": False, "last_successful_sync_at": state.last_successful_sync_at if state else None, "last_sync_status": state.sync_status if state else "NOT_STARTED", "message_count": count or 0, "requires_reconnection": item.connection_status == "RECONNECT_REQUIRED"}
+
+
+@router.post("/sync")
+def sync(context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)):
+    item = db.scalar(select(GmailConnection).where(GmailConnection.user_id == context.user.id))
+    if item is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Gmail is not connected")
+    try:
+        result = sync_gmail_connection(db, user_id=context.user.id, connection_id=item.id)
+    except GmailSyncBusy as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except GmailSyncNotEligible as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except GmailSyncUnavailable as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    return result.__dict__

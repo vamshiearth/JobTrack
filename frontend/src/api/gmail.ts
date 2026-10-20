@@ -9,6 +9,23 @@ export interface GmailConnection {
   last_synced_at: string | null
 }
 
+export interface GmailSyncStatus {
+  connected: boolean
+  sync_enabled: boolean
+  last_successful_sync_at: string | null
+  last_sync_status: string
+  message_count: number
+  requires_reconnection: boolean
+}
+
+export interface GmailSyncResult {
+  mode: string
+  messages_fetched: number
+  messages_updated: number
+  messages_deleted: number
+  completed: boolean
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}/api/v1/gmail${path}`, {
     ...init,
@@ -33,6 +50,17 @@ export function startGmailConnection(csrfToken: string) {
 
 export function disconnectGmail(csrfToken: string) {
   return request<{ status: string }>('/disconnect', {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrfToken },
+  })
+}
+
+export function getGmailSyncStatus() {
+  return request<GmailSyncStatus>('/sync-status')
+}
+
+export function triggerGmailSync(csrfToken: string) {
+  return request<GmailSyncResult>('/sync', {
     method: 'POST',
     headers: { 'X-CSRF-Token': csrfToken },
   })
