@@ -120,6 +120,21 @@ export function updateApplication(
   )
 }
 
+export function deleteApplication(
+  applicationId: string,
+  csrfToken: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/api/v1/applications/${encodeURIComponent(applicationId)}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'X-CSRF-Token': csrfToken,
+      },
+    },
+  )
+}
+
 export function createApplicationEvent(
   applicationId: string,
   payload: CreateApplicationEventPayload,

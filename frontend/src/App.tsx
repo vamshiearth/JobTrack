@@ -125,6 +125,11 @@ function App() {
             applicationId={selectedApplicationId}
             csrfToken={session.user!.csrf_token}
             onBack={() => setSelectedApplicationId(null)}
+            onDeleted={() => {
+              setSelectedApplicationId(null)
+              setIsAddingApplication(false)
+              setActivePage('applications')
+            }}
           />
         ) : (
           <LiveApplicationsPage

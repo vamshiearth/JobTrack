@@ -472,6 +472,61 @@
   outline: 3px solid #2563eb;
   outline-offset: 2px;
 }
+.delete-trigger {
+  border: 1px solid #dc2626;
+  border-radius: 4px;
+  padding: 11px 16px;
+  background: #fff;
+  color: #b91c1c;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.delete-trigger:hover {
+  background: #fef2f2;
+}
+.delete-confirm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+.delete-confirm-panel h3 {
+  margin: 0;
+  color: #991b1b;
+  font-size: 20px;
+}
+.delete-confirm-panel p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
+}
+.danger-action {
+  border: 1px solid #b91c1c;
+  border-radius: 4px;
+  padding: 11px 16px;
+  background: #b91c1c;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.danger-action:hover:not(:disabled) {
+  background: #991b1b;
+}
+.danger-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.delete-trigger:focus-visible,
+.danger-action:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
 @media (max-width: 600px) {
   .detail-intro .primary-action {
     width: 100%;
@@ -481,6 +536,12 @@
     align-items: stretch;
   }
   .detail-actions button {
+    width: 100%;
+  }
+  .delete-confirm-panel {
+    padding: 18px;
+  }
+  .delete-trigger {
     width: 100%;
   }
 }

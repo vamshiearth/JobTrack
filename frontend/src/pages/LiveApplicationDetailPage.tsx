@@ -7,18 +7,21 @@ import {
 } from '../api/applications'
 import { ApiError } from '../api/http'
 import EditApplicationForm from '../components/applications/EditApplicationForm'
+import DeleteApplicationConfirm from '../components/applications/DeleteApplicationConfirm'
 import UpdateProgressForm from '../components/applications/UpdateProgressForm'
 
 interface Props {
   applicationId: string
   csrfToken: string
   onBack: () => void
+  onDeleted: () => void
 }
 
 export default function LiveApplicationDetailPage({
   applicationId,
   csrfToken,
   onBack,
+  onDeleted,
 }: Props) {
   const [application, setApplication] = useState<ApiApplication | null>(null)
   const [events, setEvents] = useState<ApiTimelineEvent[]>([])
@@ -26,6 +29,7 @@ export default function LiveApplicationDetailPage({
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [updatingProgress, setUpdatingProgress] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [reloadVersion, setReloadVersion] = useState(0)
 
   useEffect(() => {
@@ -83,7 +87,14 @@ export default function LiveApplicationDetailPage({
       <button type='button' className='back-button' onClick={onBack}>
         Back to applications
       </button>
-      {editing ? (
+      {confirmingDelete ? (
+        <DeleteApplicationConfirm
+          application={application}
+          csrfToken={csrfToken}
+          onCancel={() => setConfirmingDelete(false)}
+          onDeleted={onDeleted}
+        />
+      ) : editing ? (
         <div className='detail-panel'>
           <h2>Edit Application</h2>
           <EditApplicationForm
@@ -143,6 +154,17 @@ export default function LiveApplicationDetailPage({
                 }}
               >
                 Edit Application
+              </button>
+              <button
+                type='button'
+                className='delete-trigger'
+                onClick={() => {
+                  setEditing(false)
+                  setUpdatingProgress(false)
+                  setConfirmingDelete(true)
+                }}
+              >
+                Delete Application
               </button>
             </div>
           </div>
