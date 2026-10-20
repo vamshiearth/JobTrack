@@ -91,6 +91,30 @@ def test_authenticated_write_requires_origin_and_csrf(context):
     assert valid.status_code == 201
 
 
+def test_missing_origin_blocks_authenticated_write(context):
+    user = create_user(context, "missing-origin")
+    token = session_for(context, user)
+    with client_for(token) as client:
+        response = client.post(
+            "/api/v1/applications",
+            json={"company_name": "Example", "job_title": "Developer"},
+            headers={"X-CSRF-Token": csrf_for_session(token)},
+        )
+    assert response.status_code == 403
+
+
+def test_wrong_csrf_token_blocks_write(context):
+    user = create_user(context, "wrong-csrf")
+    token = session_for(context, user)
+    with client_for(token) as client:
+        response = client.post(
+            "/api/v1/applications",
+            json={"company_name": "Example", "job_title": "Developer"},
+            headers={"Origin": "http://localhost:5173", "X-CSRF-Token": "not-the-correct-token"},
+        )
+    assert response.status_code == 403
+
+
 def test_csrf_token_cannot_cross_sessions(context):
     user_a = create_user(context, "csrf-a")
     user_b = create_user(context, "csrf-b")

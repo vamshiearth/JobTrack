@@ -78,7 +78,7 @@ async def google_callback(
     settings = get_settings()
     browser_state = request.cookies.get(OAUTH_COOKIE)
     if error or not code or not state or not browser_state or not secrets_compare(state, browser_state):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth callback")
+        return oauth_callback_error("Invalid OAuth callback")
 
     transaction = db.scalar(
         select(OAuthLoginTransaction)
@@ -87,13 +87,13 @@ async def google_callback(
     )
     now = datetime.now(timezone.utc)
     if transaction is None or transaction.consumed_at is not None or transaction.expires_at <= now:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth callback")
+        return oauth_callback_error("Invalid OAuth callback")
 
     transaction.consumed_at = now
     db.commit()
 
     if not settings.google_oauth_client_id or not settings.google_oauth_client_secret:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Google authentication is not configured")
+        return oauth_callback_error("Google authentication is not configured", status.HTTP_503_SERVICE_UNAVAILABLE)
     try:
         token_response = await exchange_authorization_code(
             code=code,
@@ -117,21 +117,27 @@ async def google_callback(
             db, user=user, lifetime_days=settings.auth_session_days
         )
         db.commit()
-    except AccountLinkingRequired as exc:
+    except AccountLinkingRequired:
         db.rollback()
-        raise HTTPException(status_code=409, detail="ACCOUNT_LINKING_REQUIRED") from exc
-    except IntegrityError as exc:
+        return oauth_callback_error("ACCOUNT_LINKING_REQUIRED", 409)
+    except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="ACCOUNT_CONFLICT") from exc
-    except (OAuthVerificationError, KeyError) as exc:
+        return oauth_callback_error("ACCOUNT_CONFLICT", 409)
+    except (OAuthVerificationError, KeyError):
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google identity verification failed") from exc
+        return oauth_callback_error("Google identity verification failed")
 
     response = RedirectResponse(
         settings.auth_frontend_url.rstrip("/"), status_code=status.HTTP_303_SEE_OTHER
     )
     response.delete_cookie(OAUTH_COOKIE, path=OAUTH_COOKIE_PATH)
     set_session_cookie(response, raw_session_token)
+    return response
+
+
+def oauth_callback_error(detail: str, status_code: int = status.HTTP_400_BAD_REQUEST) -> JSONResponse:
+    response = JSONResponse({"detail": detail}, status_code=status_code)
+    response.delete_cookie(OAUTH_COOKIE, path=OAUTH_COOKIE_PATH)
     return response
 
 

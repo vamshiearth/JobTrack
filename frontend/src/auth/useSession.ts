@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getCurrentUser, logoutUser, type AuthenticatedUser } from '../api/auth'
 import { ApiError } from '../api/http'
 
@@ -8,14 +8,19 @@ export function useSession() {
   const [status, setStatus] = useState<SessionStatus>('loading')
   const [user, setUser] = useState<AuthenticatedUser | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const requestId = useRef(0)
 
   const refresh = useCallback(async () => {
+    const currentRequest = ++requestId.current
     setStatus('loading')
     setError(null)
     try {
-      setUser(await getCurrentUser())
+      const nextUser = await getCurrentUser()
+      if (currentRequest !== requestId.current) return
+      setUser(nextUser)
       setStatus('authenticated')
     } catch (cause) {
+      if (currentRequest !== requestId.current) return
       setUser(null)
       if (cause instanceof ApiError && cause.status === 401) {
         setStatus('unauthenticated')
@@ -27,11 +32,12 @@ export function useSession() {
   }, [])
 
   useEffect(() => {
-    void refresh()
+    queueMicrotask(() => void refresh())
   }, [refresh])
 
   const logout = useCallback(async () => {
     if (!user) return
+    ++requestId.current
     setError(null)
     try {
       await logoutUser(user.csrf_token)
