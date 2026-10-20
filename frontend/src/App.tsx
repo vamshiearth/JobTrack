@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
 import ApplicationsPage from './pages/ApplicationsPage'
+import ApplicationDetailPage from './pages/ApplicationDetailPage'
 import DashboardPage from './pages/DashboardPage'
 import InboxPage from './pages/InboxPage'
 import SettingsPage from './pages/SettingsPage'
 import TimelinePage from './pages/TimelinePage'
+import { mockApplications } from './data/mockApplications'
 import { getBackendHealth } from './api/client'
 import type { PageId } from './types/navigation'
 import './App.css'
@@ -14,6 +16,9 @@ type BackendStatus = 'checking' | 'connected' | 'disconnected'
 
 function App() {
   const [activePage, setActivePage] = useState<PageId>('dashboard')
+  const [selectedApplicationId, setSelectedApplicationId] = useState<
+    string | null
+  >(null)
   const [backendStatus, setBackendStatus] = useState<BackendStatus>('checking')
 
   useEffect(() => {
@@ -43,16 +48,42 @@ function App() {
     }
   }, [])
 
+  function navigateTo(page: PageId) {
+    setSelectedApplicationId(null)
+    setActivePage(page)
+  }
+
+  function viewApplication(applicationId: string) {
+    setSelectedApplicationId(applicationId)
+    setActivePage('applications')
+  }
+
   function renderPage() {
     switch (activePage) {
       case 'dashboard':
         return (
           <DashboardPage
-            onViewApplications={() => setActivePage('applications')}
+            onViewApplications={() => navigateTo('applications')}
           />
         )
-      case 'applications':
-        return <ApplicationsPage />
+      case 'applications': {
+        if (selectedApplicationId !== null) {
+          const selectedApplication = mockApplications.find(
+            (application) => application.id === selectedApplicationId,
+          )
+
+          if (selectedApplication) {
+            return (
+              <ApplicationDetailPage
+                application={selectedApplication}
+                onBack={() => setSelectedApplicationId(null)}
+              />
+            )
+          }
+        }
+
+        return <ApplicationsPage onViewDetails={viewApplication} />
+      }
       case 'timeline':
         return <TimelinePage />
       case 'inbox':
@@ -64,7 +95,7 @@ function App() {
 
   return (
     <div className='app-layout'>
-      <Sidebar activePage={activePage} onNavigate={setActivePage} />
+      <Sidebar activePage={activePage} onNavigate={navigateTo} />
       <div className='app-main'>
         <Header activePage={activePage} backendStatus={backendStatus} />
         <main className='app-content'>{renderPage()}</main>

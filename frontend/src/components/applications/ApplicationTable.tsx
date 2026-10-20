@@ -2,6 +2,7 @@ import type { TrackedApplication } from '../../types/application'
 
 interface Props {
   applications: TrackedApplication[]
+  onViewDetails: (applicationId: string) => void
 }
 
 const stageLabels: Record<TrackedApplication['stage'], string> = {
@@ -19,7 +20,10 @@ const ownerLabels: Record<TrackedApplication['nextActionOwner'], string> = {
   NONE: 'None',
 }
 
-export default function ApplicationTable({ applications }: Props) {
+export default function ApplicationTable({
+  applications,
+  onViewDetails,
+}: Props) {
   if (applications.length === 0)
     return (
       <div className='applications-empty' role='status'>
@@ -37,6 +41,7 @@ export default function ApplicationTable({ applications }: Props) {
             <th scope='col'>Stage</th>
             <th scope='col'>Next Action</th>
             <th scope='col'>Last Activity</th>
+            <th scope='col'>Details</th>
           </tr>
         </thead>
         <tbody>
@@ -58,6 +63,16 @@ export default function ApplicationTable({ applications }: Props) {
               </td>
               <td>{ownerLabels[application.nextActionOwner]}</td>
               <td>{application.lastActivityAt}</td>
+              <td>
+                <button
+                  type='button'
+                  className='view-details-button'
+                  onClick={() => onViewDetails(application.id)}
+                  aria-label={`View details for ${application.jobTitle} at ${application.companyName}`}
+                >
+                  View details
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
