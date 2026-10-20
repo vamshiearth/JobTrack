@@ -154,7 +154,7 @@ def test_event_idempotency_returns_existing_event(context):
     second = client.post(f"/api/v1/applications/{application_id}/events", json=payload)
 
     assert first.status_code == 201
-    assert second.status_code == 201
+    assert second.status_code == 200
     assert second.json()["id"] == first.json()["id"]
 
 

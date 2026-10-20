@@ -63,3 +63,4 @@ class ApplicationEventResponse(BaseModel):
 
 class ApplicationEventListResponse(BaseModel):
     items: list[ApplicationEventResponse]
+    total: int

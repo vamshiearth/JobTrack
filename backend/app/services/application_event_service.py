@@ -19,7 +19,7 @@ class EventConflict(Exception):
 
 def list_application_events(
     db: Session, *, user_id: UUID, application_id: UUID
-) -> list[ApplicationEvent]:
+) -> tuple[list[ApplicationEvent], int]:
     application = db.scalar(
         select(JobApplication).where(
             JobApplication.id == application_id,
@@ -28,13 +28,14 @@ def list_application_events(
     )
     if application is None:
         raise ApplicationNotFound
-    return list(
+    events = list(
         db.scalars(
             select(ApplicationEvent)
             .where(ApplicationEvent.job_application_id == application_id)
             .order_by(ApplicationEvent.occurred_at, ApplicationEvent.recorded_at)
         ).all()
     )
+    return events, len(events)
 
 
 def record_application_event(
