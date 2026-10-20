@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
-import ApplicationsPage from './pages/ApplicationsPage'
-import ApplicationDetailPage from './pages/ApplicationDetailPage'
-import DashboardPage from './pages/DashboardPage'
 import InboxPage from './pages/InboxPage'
 import SettingsPage from './pages/SettingsPage'
-import TimelinePage from './pages/TimelinePage'
-import { mockApplications } from './data/mockApplications'
+import LiveApplicationsPage from './pages/LiveApplicationsPage'
+import LiveApplicationDetailPage from './pages/LiveApplicationDetailPage'
 import { getBackendHealth } from './api/client'
+import { startGoogleLogin } from './api/auth'
+import { useSession } from './auth/useSession'
 import { navigationItems, type PageId } from './types/navigation'
 import './App.css'
 
@@ -20,14 +19,9 @@ function App() {
     string | null
   >(null)
   const [backendStatus, setBackendStatus] = useState<BackendStatus>('checking')
+  const session = useSession()
   const mainRef = useRef<HTMLElement>(null)
   const initialRender = useRef(true)
-
-  const selectedApplication = selectedApplicationId
-    ? mockApplications.find(
-        (application) => application.id === selectedApplicationId,
-      )
-    : undefined
 
   useEffect(() => {
     let active = true
@@ -57,10 +51,9 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const pageName = selectedApplication
-      ? selectedApplication.jobTitle
-      : (navigationItems.find((item) => item.id === activePage)?.label ??
-        'Dashboard')
+    const pageName =
+      navigationItems.find((item) => item.id === activePage)?.label ??
+      'Dashboard'
 
     document.title = `${pageName} | JobTrack`
 
@@ -70,7 +63,7 @@ function App() {
     }
 
     mainRef.current?.focus()
-  }, [activePage, selectedApplicationId, selectedApplication])
+  }, [activePage, selectedApplicationId])
 
   function navigateTo(page: PageId) {
     setSelectedApplicationId(null)
@@ -86,30 +79,73 @@ function App() {
     switch (activePage) {
       case 'dashboard':
         return (
-          <DashboardPage
-            onViewApplications={() => navigateTo('applications')}
-          />
+          <section className='informational-page'>
+            <h2>Dashboard</h2>
+            <p>
+              Live dashboard summaries are coming soon. Your applications are
+              available in the Applications view.
+            </p>
+            <button type='button' onClick={() => navigateTo('applications')}>
+              View applications
+            </button>
+          </section>
         )
       case 'applications': {
-        if (selectedApplication) {
-          return (
-            <ApplicationDetailPage
-              application={selectedApplication}
-              onBack={() => setSelectedApplicationId(null)}
-            />
-          )
-        }
-
-        return <ApplicationsPage onViewDetails={viewApplication} />
+        return selectedApplicationId ? (
+          <LiveApplicationDetailPage
+            applicationId={selectedApplicationId}
+            onBack={() => setSelectedApplicationId(null)}
+          />
+        ) : (
+          <LiveApplicationsPage onViewDetails={viewApplication} />
+        )
       }
       case 'timeline':
-        return <TimelinePage onViewApplication={viewApplication} />
+        return (
+          <section className='informational-page'>
+            <h2>Timeline</h2>
+            <p>Choose an application to view its recorded timeline.</p>
+            <button type='button' onClick={() => navigateTo('applications')}>
+              Browse applications
+            </button>
+          </section>
+        )
       case 'inbox':
         return <InboxPage />
       case 'settings':
         return <SettingsPage />
     }
   }
+
+  if (session.status === 'loading')
+    return (
+      <main className='auth-screen'>
+        <p role='status'>Checking your session...</p>
+      </main>
+    )
+  if (session.status === 'error')
+    return (
+      <main className='auth-screen'>
+        <h1>JobTrack</h1>
+        <p role='alert'>{session.error}</p>
+        <button type='button' onClick={() => void session.refresh()}>
+          Try again
+        </button>
+      </main>
+    )
+  if (session.status === 'unauthenticated')
+    return (
+      <main className='auth-screen'>
+        <div className='auth-panel'>
+          <p className='detail-eyebrow'>JOBTRACK</p>
+          <h1>Keep your job search moving.</h1>
+          <p>Sign in to access your applications and activity timeline.</p>
+          <button type='button' onClick={startGoogleLogin}>
+            Continue with Google
+          </button>
+        </div>
+      </main>
+    )
 
   return (
     <div className='app-layout'>
@@ -119,6 +155,12 @@ function App() {
       <Sidebar activePage={activePage} onNavigate={navigateTo} />
       <div className='app-main'>
         <Header activePage={activePage} backendStatus={backendStatus} />
+        <div className='session-toolbar'>
+          <span>{session.user?.email}</span>
+          <button type='button' onClick={() => void session.logout()}>
+            Sign out
+          </button>
+        </div>
         <main
           id='main-content'
           ref={mainRef}
