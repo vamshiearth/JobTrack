@@ -437,8 +437,50 @@
 .detail-intro .primary-action {
   flex-shrink: 0;
 }
+.detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.detail-actions button {
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #fff;
+  color: #334155;
+  padding: 11px 16px;
+  font: inherit;
+  cursor: pointer;
+}
+.detail-actions button.primary-action {
+  border-color: transparent;
+  background: #1769aa;
+  color: #fff;
+}
+.add-application-form select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+}
+.add-application-form select:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
 @media (max-width: 600px) {
   .detail-intro .primary-action {
+    width: 100%;
+  }
+  .detail-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .detail-actions button {
     width: 100%;
   }
 }

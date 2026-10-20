@@ -7,6 +7,7 @@ import {
 } from '../api/applications'
 import { ApiError } from '../api/http'
 import EditApplicationForm from '../components/applications/EditApplicationForm'
+import UpdateProgressForm from '../components/applications/UpdateProgressForm'
 
 interface Props {
   applicationId: string
@@ -24,6 +25,7 @@ export default function LiveApplicationDetailPage({
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
+  const [updatingProgress, setUpdatingProgress] = useState(false)
   const [reloadVersion, setReloadVersion] = useState(0)
 
   useEffect(() => {
@@ -95,6 +97,19 @@ export default function LiveApplicationDetailPage({
             }}
           />
         </div>
+      ) : updatingProgress ? (
+        <section className='detail-panel'>
+          <h2>Update Recruitment Progress</h2>
+          <UpdateProgressForm
+            applicationId={application.id}
+            csrfToken={csrfToken}
+            onCancel={() => setUpdatingProgress(false)}
+            onSaved={() => {
+              setUpdatingProgress(false)
+              setReloadVersion((value) => value + 1)
+            }}
+          />
+        </section>
       ) : (
         <>
           <div className='detail-heading detail-intro'>
@@ -109,13 +124,27 @@ export default function LiveApplicationDetailPage({
             <span className='detail-owner'>
               {application.next_action_owner}
             </span>
-            <button
-              type='button'
-              className='primary-action'
-              onClick={() => setEditing(true)}
-            >
-              Edit Application
-            </button>
+            <div className='detail-actions'>
+              <button
+                type='button'
+                className='primary-action'
+                onClick={() => {
+                  setEditing(false)
+                  setUpdatingProgress(true)
+                }}
+              >
+                Update Progress
+              </button>
+              <button
+                type='button'
+                onClick={() => {
+                  setUpdatingProgress(false)
+                  setEditing(true)
+                }}
+              >
+                Edit Application
+              </button>
+            </div>
           </div>
           <div className='detail-grid'>
             <article className='detail-card'>

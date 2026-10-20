@@ -70,6 +70,24 @@ export interface UpdateApplicationPayload {
   notes?: string | null
 }
 
+export type ManualEventType =
+  | 'RECRUITER_CONTACTED'
+  | 'ASSESSMENT_INVITED'
+  | 'ASSESSMENT_COMPLETED'
+  | 'INTERVIEW_SCHEDULED'
+  | 'INTERVIEW_COMPLETED'
+  | 'OFFER_RECEIVED'
+  | 'REJECTION_RECEIVED'
+  | 'APPLICATION_WITHDRAWN'
+
+export interface CreateApplicationEventPayload {
+  event_kind: ManualEventType
+  interview_round?: number | null
+  occurred_at: string
+  client_request_id: string
+  details?: Record<string, unknown> | null
+}
+
 export function createApplication(
   payload: CreateApplicationPayload,
   csrfToken: string,
@@ -93,6 +111,24 @@ export function updateApplication(
     `/api/v1/applications/${encodeURIComponent(applicationId)}`,
     {
       method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+      },
+      body: JSON.stringify(payload),
+    },
+  )
+}
+
+export function createApplicationEvent(
+  applicationId: string,
+  payload: CreateApplicationEventPayload,
+  csrfToken: string,
+) {
+  return apiRequest<ApiTimelineEvent>(
+    `/api/v1/applications/${encodeURIComponent(applicationId)}/events`,
+    {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-Token': csrfToken,
