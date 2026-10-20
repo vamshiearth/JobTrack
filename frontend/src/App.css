@@ -527,6 +527,43 @@
   outline: 3px solid #2563eb;
   outline-offset: 3px;
 }
+
+.live-dashboard-page,
+.live-timeline-page { display: flex; flex-direction: column; gap: 24px; }
+.live-page-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.live-page-heading h2 { margin: 0 0 8px; font-size: 24px; }
+.live-page-heading p { margin: 0; color: #64748b; font-size: 14px; }
+.dashboard-refresh { padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; color: #334155; font: inherit; cursor: pointer; }
+.live-stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.live-stat-card, .live-data-panel { min-width: 0; padding: 22px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; }
+.live-stat-card { display: flex; flex-direction: column; gap: 14px; }
+.live-stat-card span { color: #64748b; font-size: 13px; }
+.live-stat-card strong { color: #0f172a; font-size: 30px; font-weight: 700; }
+.live-dashboard-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 20px; }
+.live-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.live-panel-heading h3 { margin: 0; font-size: 17px; }
+.live-panel-heading span { color: #64748b; font-size: 12px; }
+.live-panel-heading button, .live-record-list button { border: none; background: transparent; color: #2563eb; font: inherit; font-weight: 600; cursor: pointer; }
+.live-record-list { padding: 0; margin: 0; list-style: none; }
+.live-record-list li { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 0; border-bottom: 1px solid #f1f5f9; }
+.live-record-list li:last-child { border-bottom: none; }
+.live-record-list li > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.live-record-list strong { overflow-wrap: anywhere; font-size: 14px; }
+.live-record-list span, .live-record-list small { color: #64748b; font-size: 12px; }
+.live-empty-message { padding: 24px 8px; color: #64748b; font-size: 13px; }
+.live-panel-note, .timeline-scope-note { color: #64748b; font-size: 12px; line-height: 1.6; }
+.timeline-scope-note { margin: 0; }
+.timeline-filter-bar { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+.timeline-filter-bar label { display: grid; gap: 6px; color: #475569; font-size: 13px; font-weight: 600; }
+.timeline-filter-bar input, .timeline-filter-bar select { min-width: 220px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; color: #0f172a; font: inherit; }
+.activity-feed { display: grid; gap: 0; padding: 0; margin: 0; list-style: none; }
+.activity-feed-item { position: relative; display: flex; gap: 14px; padding: 18px 0; border-bottom: 1px solid #f1f5f9; }
+.activity-feed-marker { flex: 0 0 12px; height: 12px; margin-top: 4px; border: 3px solid #2563eb; border-radius: 50%; background: #fff; }
+.activity-feed-body { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 8px; }
+.activity-feed-heading { display: flex; justify-content: space-between; gap: 12px; }
+.activity-feed-heading time { color: #64748b; font-size: 12px; white-space: nowrap; }
+.activity-feed-body p { margin: 0; color: #475569; font-size: 13px; }
+@media (max-width: 1100px) { .live-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .live-dashboard-columns { grid-template-columns: 1fr; } }
 @media (max-width: 600px) {
   .detail-intro .primary-action {
     width: 100%;
@@ -544,6 +581,14 @@
   .delete-trigger {
     width: 100%;
   }
+  .live-page-heading { align-items: stretch; }
+  .live-stats-grid { gap: 10px; }
+  .live-stat-card, .live-data-panel { padding: 16px; }
+  .live-stat-card strong { font-size: 24px; }
+  .live-record-list li { align-items: flex-start; }
+  .timeline-filter-bar { flex-direction: column; }
+  .timeline-filter-bar input, .timeline-filter-bar select { min-width: 0; width: 100%; box-sizing: border-box; }
+  .activity-feed-heading { flex-direction: column; gap: 4px; }
 }
 
 .page-section h2 {

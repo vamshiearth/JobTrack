@@ -5,6 +5,8 @@ import InboxPage from './pages/InboxPage'
 import SettingsPage from './pages/SettingsPage'
 import LiveApplicationsPage from './pages/LiveApplicationsPage'
 import LiveApplicationDetailPage from './pages/LiveApplicationDetailPage'
+import LiveDashboardPage from './pages/LiveDashboardPage'
+import LiveTimelinePage from './pages/LiveTimelinePage'
 import AddApplicationForm from './components/applications/AddApplicationForm'
 import { getBackendHealth } from './api/client'
 import { startGoogleLogin } from './api/auth'
@@ -88,18 +90,7 @@ function App() {
   function renderPage() {
     switch (activePage) {
       case 'dashboard':
-        return (
-          <section className='informational-page'>
-            <h2>Dashboard</h2>
-            <p>
-              Live dashboard summaries are coming soon. Your applications are
-              available in the Applications view.
-            </p>
-            <button type='button' onClick={() => navigateTo('applications')}>
-              View applications
-            </button>
-          </section>
-        )
+        return <LiveDashboardPage onViewApplication={viewApplication} onViewApplications={() => navigateTo('applications')} />
       case 'applications': {
         if (isAddingApplication) {
           return (
@@ -139,15 +130,7 @@ function App() {
         )
       }
       case 'timeline':
-        return (
-          <section className='informational-page'>
-            <h2>Timeline</h2>
-            <p>Choose an application to view its recorded timeline.</p>
-            <button type='button' onClick={() => navigateTo('applications')}>
-              Browse applications
-            </button>
-          </section>
-        )
+        return <LiveTimelinePage onViewApplication={viewApplication} />
       case 'inbox':
         return <InboxPage />
       case 'settings':
