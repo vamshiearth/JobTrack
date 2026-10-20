@@ -603,6 +603,42 @@
   }
 }
 
+.skip-link {
+  position: fixed;
+  top: -70px;
+  left: 16px;
+  z-index: 1000;
+  background: #ffffff;
+  color: #1d4ed8;
+  border: 2px solid #2563eb;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 12px;
+}
+.app-content:focus {
+  outline: none;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .application-detail-page {
   display: flex;
   flex-direction: column;

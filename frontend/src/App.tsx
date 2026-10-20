@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
 import ApplicationsPage from './pages/ApplicationsPage'
@@ -9,7 +9,7 @@ import SettingsPage from './pages/SettingsPage'
 import TimelinePage from './pages/TimelinePage'
 import { mockApplications } from './data/mockApplications'
 import { getBackendHealth } from './api/client'
-import type { PageId } from './types/navigation'
+import { navigationItems, type PageId } from './types/navigation'
 import './App.css'
 
 type BackendStatus = 'checking' | 'connected' | 'disconnected'
@@ -20,6 +20,14 @@ function App() {
     string | null
   >(null)
   const [backendStatus, setBackendStatus] = useState<BackendStatus>('checking')
+  const mainRef = useRef<HTMLElement>(null)
+  const initialRender = useRef(true)
+
+  const selectedApplication = selectedApplicationId
+    ? mockApplications.find(
+        (application) => application.id === selectedApplicationId,
+      )
+    : undefined
 
   useEffect(() => {
     let active = true
@@ -48,6 +56,22 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    const pageName = selectedApplication
+      ? selectedApplication.jobTitle
+      : (navigationItems.find((item) => item.id === activePage)?.label ??
+        'Dashboard')
+
+    document.title = `${pageName} | JobTrack`
+
+    if (initialRender.current) {
+      initialRender.current = false
+      return
+    }
+
+    mainRef.current?.focus()
+  }, [activePage, selectedApplicationId, selectedApplication])
+
   function navigateTo(page: PageId) {
     setSelectedApplicationId(null)
     setActivePage(page)
@@ -67,19 +91,13 @@ function App() {
           />
         )
       case 'applications': {
-        if (selectedApplicationId !== null) {
-          const selectedApplication = mockApplications.find(
-            (application) => application.id === selectedApplicationId,
+        if (selectedApplication) {
+          return (
+            <ApplicationDetailPage
+              application={selectedApplication}
+              onBack={() => setSelectedApplicationId(null)}
+            />
           )
-
-          if (selectedApplication) {
-            return (
-              <ApplicationDetailPage
-                application={selectedApplication}
-                onBack={() => setSelectedApplicationId(null)}
-              />
-            )
-          }
         }
 
         return <ApplicationsPage onViewDetails={viewApplication} />
@@ -95,10 +113,20 @@ function App() {
 
   return (
     <div className='app-layout'>
+      <a className='skip-link' href='#main-content'>
+        Skip to main content
+      </a>
       <Sidebar activePage={activePage} onNavigate={navigateTo} />
       <div className='app-main'>
         <Header activePage={activePage} backendStatus={backendStatus} />
-        <main className='app-content'>{renderPage()}</main>
+        <main
+          id='main-content'
+          ref={mainRef}
+          tabIndex={-1}
+          className='app-content'
+        >
+          {renderPage()}
+        </main>
       </div>
     </div>
   )
