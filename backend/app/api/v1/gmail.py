@@ -25,6 +25,10 @@ from app.services.gmail_sync_service import (
     GmailSyncUnavailable,
     sync_gmail_connection,
 )
+from app.services.recruitment_classification_service import (
+    ClassificationNotEligible,
+    classify_saved_messages,
+)
 
 router = APIRouter(prefix="/gmail", tags=["Gmail"])
 CONSENT_COOKIE = "jobtrack_gmail_consent"
@@ -143,4 +147,16 @@ def sync(context: AuthContext = Depends(get_auth_context), db: Session = Depends
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     except GmailSyncUnavailable as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    return result.__dict__
+
+
+@router.post("/classify")
+def classify(context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)):
+    item = db.scalar(select(GmailConnection).where(GmailConnection.user_id == context.user.id))
+    if item is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Gmail is not connected")
+    try:
+        result = classify_saved_messages(db, user_id=context.user.id, connection_id=item.id)
+    except ClassificationNotEligible as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     return result.__dict__
