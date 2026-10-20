@@ -18,6 +18,8 @@ export default function LiveDashboardPage({
   useEffect(() => {
     let active = true
     async function load() {
+      setLoading(true)
+      setError(null)
       try {
         const result = await loadDashboard()
         if (!active) return

@@ -23,6 +23,8 @@ export default function LiveTimelinePage({ onViewApplication }: Props) {
   useEffect(() => {
     let active = true
     async function load() {
+      setLoading(true)
+      setError(null)
       try {
         const result = await loadTimeline()
         if (!active) return
