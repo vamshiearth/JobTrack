@@ -1,5 +1,6 @@
 export type PageId =
   | 'dashboard'
+  | 'discovery'
   | 'applications'
   | 'timeline'
   | 'inbox'
@@ -15,6 +16,7 @@ export interface NavigationItem {
 
 export const navigationItems: NavigationItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '◫' },
+  { id: 'discovery', label: 'Discovery', icon: '⌕' },
   { id: 'applications', label: 'Applications', icon: '▣' },
   { id: 'timeline', label: 'Timeline', icon: '▤' },
   { id: 'inbox', label: 'Email Inbox', icon: '✉' },

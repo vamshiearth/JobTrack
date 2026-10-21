@@ -1,14 +1,58 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.dependencies.auth import get_current_user_id
-from app.schemas.discovery import DiscoveryJobResult, DiscoveryMatchSummary, DiscoverySearchResponse
+from app.models import DiscoverySource
+from app.schemas.discovery import DiscoveryJobResult, DiscoveryMatchSummary, DiscoveryRefreshResponse, DiscoverySearchResponse, DiscoverySourceResponse
+from app.schemas.job_opportunity import JobOpportunityCreate
+from app.services.discovery.greenhouse import GreenhouseAdapter
+from app.services.discovery.ingestion import ingest_greenhouse_board
+from app.services.discovery.source_registry import GreenhouseBoard, GreenhouseBoardRegistry
+from app.services.job_opportunities import create_opportunity
 from app.services.discovery.search import search_discovered_jobs
 
 router = APIRouter(prefix="/discovery", tags=["Discovery"])
+
+
+@router.get("/sources", response_model=list[DiscoverySourceResponse])
+def list_discovery_sources(user_id: uuid.UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    return list(db.scalars(select(DiscoverySource).order_by(DiscoverySource.company_name)).all())
+
+
+@router.post("/sources/{source_id}/refresh", response_model=DiscoveryRefreshResponse)
+def refresh_discovery_source(source_id: uuid.UUID, user_id: uuid.UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    source = db.get(DiscoverySource, source_id)
+    if source is None or not source.enabled:
+        raise HTTPException(status_code=404, detail="Discovery source not found")
+    registry = GreenhouseBoardRegistry((GreenhouseBoard(source.board_token, source.company_name),))
+    try:
+        result = ingest_greenhouse_board(db, board_token=source.board_token, registry=registry, adapter=GreenhouseAdapter(registry))
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        source.last_error_code = type(exc).__name__[:50]
+        db.commit()
+        raise HTTPException(status_code=502, detail="Discovery refresh failed") from exc
+    return DiscoveryRefreshResponse(source_id=source.id, **result.__dict__)
+
+
+@router.post("/jobs/{job_id}/save")
+def save_discovery_job(job_id: uuid.UUID, user_id: uuid.UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    from app.models import DiscoveredJob
+    job = db.get(DiscoveredJob, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Discovered job not found")
+    opportunity, _ = create_opportunity(db, user_id=user_id, data=JobOpportunityCreate(
+        company_name=job.company_name, job_title=job.job_title, location=job.location,
+        work_arrangement=job.work_arrangement, description=job.description,
+        source_job_id=job.provider_job_id, source_url=job.source_url,
+    ))
+    db.commit()
+    return {"saved": True, "opportunity_id": opportunity.id}
 
 
 @router.get("/jobs", response_model=DiscoverySearchResponse)

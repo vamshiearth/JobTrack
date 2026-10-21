@@ -1,6 +1,7 @@
+from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class DiscoveryMatchSummary(BaseModel):
@@ -30,3 +31,21 @@ class DiscoverySearchResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class DiscoverySourceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    provider: str
+    company_name: str
+    enabled: bool
+    last_success_at: datetime | None
+    last_error_code: str | None
+
+
+class DiscoveryRefreshResponse(BaseModel):
+    source_id: UUID
+    created: int
+    updated: int
+    unchanged: int
+    observed: int
