@@ -44,6 +44,12 @@ The `(provider, board_token)` and `(source_id, provider_job_id)` constraints mak
 
 Synthetic response tests cover valid normalization, duplicate IDs, missing fields, unsafe URLs, invalid board tokens, HTTP 429 retry, timeout failure, malformed JSON, and HTML description handling. No third-party network request is required for the test suite.
 
+## Step 3: Discovery Search and Ranking
+
+`GET /api/v1/discovery/jobs` filters the shared catalog by text, category, location, work arrangement, availability, and source, then applies pagination. `sort=match_score` evaluates the complete filtered set with the existing deterministic matcher before slicing the requested page. A missing candidate profile is reported as `NEEDS_PROFILE`; insufficient job evidence and eligibility language retain the matcher’s explicit statuses. Manual saved state is calculated only against the authenticated user’s opportunities.
+
+Work arrangement is stored as `REMOTE`, `HYBRID`, `ONSITE`, or `UNKNOWN`, with separate location restriction text when the feed provides evidence. The metadata migration is `f2a3b4c5d6e7`.
+
 ## Boundaries
 
 This step does not automate applications, infer work authorization, or submit employer forms. Greenhouse, Lever, and Ashby remain employer-specific feeds; future integrations require their own validated source policy. Persistence tests run against the isolated `jobtrack_step5_test` database; the development database is not modified.

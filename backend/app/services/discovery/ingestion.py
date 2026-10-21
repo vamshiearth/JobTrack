@@ -20,6 +20,13 @@ class IngestionResult:
     observed: int
 
 
+def _work_metadata(location: str | None, description: str | None) -> tuple[str, str | None]:
+    text = " ".join(filter(None, [location, description])).casefold()
+    arrangement = "HYBRID" if "hybrid" in text else "REMOTE" if "remote" in text else "ONSITE" if location else "UNKNOWN"
+    restriction = next((text[text.index(marker):].split(".", 1)[0] for marker in ("remote within", "remote in", "based in") if marker in text), None)
+    return arrangement, restriction
+
+
 def content_fingerprint(job: DiscoveredOpportunity) -> str:
     payload = {
         "company_name": job.company_name,
@@ -60,6 +67,7 @@ def ingest_greenhouse_board(
     created = updated = unchanged = 0
     for job in jobs:
         fingerprint = content_fingerprint(job)
+        work_arrangement, location_restrictions = _work_metadata(job.location, job.description)
         existing = db.scalar(
             select(DiscoveredJob)
             .where(
@@ -76,6 +84,8 @@ def ingest_greenhouse_board(
                     company_name=job.company_name,
                     job_title=job.job_title,
                     location=job.location,
+                    work_arrangement=work_arrangement,
+                    location_restrictions=location_restrictions,
                     description=job.description,
                     source_url=job.source_url,
                     content_fingerprint=fingerprint,
@@ -90,6 +100,8 @@ def ingest_greenhouse_board(
             existing.company_name = job.company_name
             existing.job_title = job.job_title
             existing.location = job.location
+            existing.work_arrangement = work_arrangement
+            existing.location_restrictions = location_restrictions
             existing.description = job.description
             existing.source_url = job.source_url
             existing.content_fingerprint = fingerprint

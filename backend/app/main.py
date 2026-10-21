@@ -12,6 +12,7 @@ from app.api.v1.review_items import router as review_items_router
 from app.api.v1.opportunities import router as opportunities_router
 from app.api.v1.matching import router as matching_router
 from app.api.v1.preparations import router as preparations_router
+from app.api.v1.discovery import router as discovery_router
 from app.core.error_handlers import register_error_handlers
 from app.core.config import get_settings
 from app.db.session import SessionLocal
@@ -76,6 +77,7 @@ app.include_router(review_items_router, prefix="/api/v1")
 app.include_router(opportunities_router, prefix="/api/v1")
 app.include_router(matching_router, prefix="/api/v1")
 app.include_router(preparations_router, prefix="/api/v1")
+app.include_router(discovery_router, prefix="/api/v1")
 
 
 @app.get("/api/health", tags=["Health"])

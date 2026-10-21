@@ -334,6 +334,8 @@ class DiscoveredJob(Base):
     company_name: Mapped[str] = mapped_column(String(255), nullable=False)
     job_title: Mapped[str] = mapped_column(String(255), nullable=False)
     location: Mapped[str | None] = mapped_column(String(255))
+    work_arrangement: Mapped[str | None] = mapped_column(String(30))
+    location_restrictions: Mapped[str | None] = mapped_column(Text)
     description: Mapped[str | None] = mapped_column(Text)
     source_url: Mapped[str] = mapped_column(Text, nullable=False)
     content_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
