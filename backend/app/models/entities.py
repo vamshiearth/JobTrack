@@ -288,6 +288,9 @@ class JobOpportunity(Base):
     updated_at: Mapped[datetime] = timestamp_column()
 
     user: Mapped[User] = relationship()
+    preparations: Mapped[list["ApplicationPreparation"]] = relationship(
+        back_populates="opportunity", cascade="all, delete-orphan"
+    )
 
 
 class CandidateProfile(Base):
@@ -344,3 +347,36 @@ class JobMatchAssessment(Base):
 
     opportunity: Mapped[JobOpportunity] = relationship()
     candidate_profile: Mapped[CandidateProfile] = relationship(back_populates="assessments")
+
+
+class ApplicationPreparation(Base):
+    __tablename__ = "application_preparations"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('DRAFT', 'NEEDS_REVIEW', 'APPROVED', 'STALE', 'ARCHIVED')",
+            name="application_preparation_status_valid",
+        ),
+        Index("ix_application_preparations_user_id", "user_id"),
+        Index("ix_application_preparations_opportunity_id", "opportunity_id"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_column()
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    opportunity_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("job_opportunities.id", ondelete="CASCADE"), nullable=False)
+    candidate_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("candidate_profiles.id", ondelete="CASCADE"), nullable=False)
+    match_assessment_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("job_match_assessments.id", ondelete="SET NULL"))
+    source_fingerprint: Mapped[str] = mapped_column(String(255), nullable=False)
+    draft_revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="DRAFT")
+    resume_suggestions: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, default=list)
+    application_answers: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, default=list)
+    review_notes: Mapped[str | None] = mapped_column(Text)
+    approved_at: Mapped[datetime | None] = mapped_column(Timestamp)
+    approved_revision: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = timestamp_column()
+    updated_at: Mapped[datetime] = timestamp_column()
+
+    user: Mapped[User] = relationship()
+    opportunity: Mapped[JobOpportunity] = relationship(back_populates="preparations")
+    candidate_profile: Mapped[CandidateProfile] = relationship()
+    match_assessment: Mapped[JobMatchAssessment | None] = relationship()
