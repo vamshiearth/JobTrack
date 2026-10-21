@@ -298,6 +298,7 @@ class DiscoverySource(Base):
     __table_args__ = (
         CheckConstraint("provider = 'GREENHOUSE'", name="discovery_provider_valid"),
         UniqueConstraint("provider", "board_token", name="discovery_source_provider_board_unique"),
+        UniqueConstraint("lease_token", name="discovery_source_lease_token_unique"),
     )
 
     id: Mapped[uuid.UUID] = uuid_column()
@@ -307,6 +308,10 @@ class DiscoverySource(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_success_at: Mapped[datetime | None] = mapped_column(Timestamp)
     last_error_code: Mapped[str | None] = mapped_column(String(50))
+    last_refresh_status: Mapped[str | None] = mapped_column(String(20))
+    next_refresh_at: Mapped[datetime | None] = mapped_column(Timestamp)
+    lease_token: Mapped[str | None] = mapped_column(String(64))
+    lease_expires_at: Mapped[datetime | None] = mapped_column(Timestamp)
     created_at: Mapped[datetime] = timestamp_column()
     updated_at: Mapped[datetime] = timestamp_column()
 
