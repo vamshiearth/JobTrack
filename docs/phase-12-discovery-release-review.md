@@ -18,7 +18,9 @@ The frontend was started separately on `localhost:5175` with `VITE_API_BASE_URL=
 
 The guarded QA seed script at `backend/scripts/seed_qa_discovery.py` requires `QA_SEED_ENABLED=true`, verifies `current_database()` is `jobtrack_step5_test`, uses the existing `DiscoverySource` and `DiscoveredJob` models, and is idempotent for the `qa_fixture` source. It created these synthetic records only: Example Systems / Oracle CPQ Developer (remote, United States), Demo Robotics / Java Backend Engineer (hybrid, Boston, MA), Sample Analytics / Data Engineer (onsite, Boston, MA), Fictional Technologies / Associate Software Engineer (unknown location and arrangement), and Test Cloud Inc. / Python Backend Developer (remote, Massachusetts). No live provider request was made.
 
-Populated Discovery verification completed: the unfiltered catalog showed five roles; `Oracle CPQ` returned only Example Systems; every role displayed `NEEDS_PROFILE` with no fabricated score; and saving Oracle CPQ Developer produced one saved opportunity. A direct QA database check reported five discovered jobs, one saved opportunity, zero `job_applications`, and zero `application_events`. The duplicate-save and remaining filter, pagination, refresh-success/failure, and numeric-ranking checks remain pending.
+Populated Discovery verification completed: the unfiltered catalog showed five roles; `Oracle CPQ` returned only Example Systems; Java returned Demo Robotics; Data Engineer returned Sample Analytics; onsite returned Sample Analytics; hybrid returned Demo Robotics; remote returned Example Systems and Test Cloud Inc.; nonexistent search showed the genuine empty state; and clear-all returned all five. The remote cards preserved distinct `United States` and `Massachusetts` locations. The UI search covers title/employer only, so `Boston` returned no rows; the UI has no location or `UNKNOWN` arrangement option, so those browser checks were unavailable rather than passed.
+
+Every card displayed `NEEDS_PROFILE` with no fabricated score. The QA account has no candidate profile (`GET /api/v1/candidate-profile` returned `404`), and the current UI has no profile editor, so numeric ranking and deterministic scored ordering were not tested. The UI uses a fixed limit of 12 and exposes no page-size selector; with five jobs it renders one page, so the requested 2/2/1 pagination distribution is not applicable. Controlled provider failure and scheduler persistence tests passed backend-only (`9 passed`), but browser refresh-error presentation was not injected. A direct QA database check reported five discovered jobs, one saved opportunity, zero `job_applications`, and zero `application_events`; Oracle's second save state rendered as disabled `Saved`, preserving one opportunity.
 
 ## Validation
 
@@ -27,8 +29,8 @@ Populated Discovery verification completed: the unfiltered catalog showed five r
 - Compilation: passed.
 - Alembic current/check: passed after constraint-name alignment.
 - Frontend production build: passed.
-- Frontend lint: passed with one non-blocking `react(set-state-in-effect)` warning in the Discovery page.
+- Frontend lint: passed with no warnings after moving filter page resets to filter events and keeping source synchronization non-urgent.
 
 ## Limitations
 
-The scheduler is provided as an explicit worker module and remains disabled during QA. Filter semantics beyond free-text search, pagination, refresh failure handling, duplicate-save browser verification, and numeric ranking remain pending. No live provider or employer application submission was performed.
+The scheduler is provided as an explicit worker module and remains disabled during QA. Location/unknown browser controls, numeric ranking, 2/2/1 pagination, and browser-injected refresh failure remain unverified or unavailable in the current UI. No live provider or employer application submission was performed.
