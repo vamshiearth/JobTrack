@@ -1,3 +1,6 @@
+import asyncio
+import contextlib
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,6 +9,7 @@ from app.api.v1.auth import router as auth_router, session_router
 from app.api.v1.events import router as events_router
 from app.api.v1.gmail import router as gmail_router
 from app.api.v1.review_items import router as review_items_router
+from app.api.v1.opportunities import router as opportunities_router
 from app.core.error_handlers import register_error_handlers
 
 

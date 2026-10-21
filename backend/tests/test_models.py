@@ -8,6 +8,7 @@ from app.models import (
     GmailConnection,
     GmailSyncState,
     JobApplication,
+    JobOpportunity,
     ReviewItem,
     AuthSession,
     OAuthLoginTransaction,
@@ -24,6 +25,7 @@ def test_all_expected_tables_are_registered():
         "gmail_oauth_transactions",
         "gmail_sync_states",
         "job_applications",
+        "job_opportunities",
         "oauth_login_transactions",
         "review_items",
         "users",
@@ -40,6 +42,7 @@ def test_each_model_has_uuid_primary_key_except_sync_state():
         ReviewItem,
         AuthSession,
         OAuthLoginTransaction,
+        JobOpportunity,
     ):
         assert [column.name for column in model.__table__.primary_key] == ["id"]
         assert str(model.id.type) == "UUID"

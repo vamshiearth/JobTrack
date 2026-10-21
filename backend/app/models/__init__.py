@@ -4,6 +4,7 @@ from app.models.entities import (
     GmailConnection,
     GmailSyncState,
     JobApplication,
+    JobOpportunity,
     ReviewItem,
     User,
 )
@@ -15,6 +16,7 @@ __all__ = [
     "GmailSyncState",
     "EmailMessage",
     "JobApplication",
+    "JobOpportunity",
     "ApplicationEvent",
     "ReviewItem",
     "AuthSession",

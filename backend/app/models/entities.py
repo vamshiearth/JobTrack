@@ -256,3 +256,32 @@ class ReviewItem(Base):
     suggested_application: Mapped[JobApplication | None] = relationship(
         back_populates="review_items"
     )
+
+
+class JobOpportunity(Base):
+    __tablename__ = "job_opportunities"
+    __table_args__ = (
+        CheckConstraint("status IN ('SAVED', 'ARCHIVED')", name="job_opportunity_status_valid"),
+        CheckConstraint("source_type = 'MANUAL'", name="job_opportunity_source_type_valid"),
+        UniqueConstraint("user_id", "normalized_url", name="job_opportunity_user_url_unique"),
+        Index("ix_job_opportunities_user_id", "user_id"),
+        Index("ix_job_opportunities_user_status", "user_id", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_column()
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    source_type: Mapped[str] = mapped_column(String(20), nullable=False, default="MANUAL")
+    source_job_id: Mapped[str | None] = mapped_column(String(255))
+    company_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    job_title: Mapped[str] = mapped_column(String(255), nullable=False)
+    location: Mapped[str | None] = mapped_column(String(255))
+    work_arrangement: Mapped[str | None] = mapped_column(String(30))
+    employment_type: Mapped[str | None] = mapped_column(String(30))
+    description: Mapped[str | None] = mapped_column(Text)
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    normalized_url: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="SAVED")
+    created_at: Mapped[datetime] = timestamp_column()
+    updated_at: Mapped[datetime] = timestamp_column()
+
+    user: Mapped[User] = relationship()
