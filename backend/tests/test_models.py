@@ -24,6 +24,8 @@ def test_all_expected_tables_are_registered():
         "application_submission_confirmations",
         "auth_sessions",
         "candidate_profiles",
+            "discovered_jobs",
+            "discovery_sources",
         "email_messages",
         "gmail_connections",
         "gmail_oauth_transactions",

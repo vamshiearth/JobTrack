@@ -293,6 +293,59 @@ class JobOpportunity(Base):
     )
 
 
+class DiscoverySource(Base):
+    __tablename__ = "discovery_sources"
+    __table_args__ = (
+        CheckConstraint("provider = 'GREENHOUSE'", name="discovery_provider_valid"),
+        UniqueConstraint("provider", "board_token", name="discovery_source_provider_board_unique"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_column()
+    provider: Mapped[str] = mapped_column(String(30), nullable=False)
+    board_token: Mapped[str] = mapped_column(String(128), nullable=False)
+    company_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    last_success_at: Mapped[datetime | None] = mapped_column(Timestamp)
+    last_error_code: Mapped[str | None] = mapped_column(String(50))
+    created_at: Mapped[datetime] = timestamp_column()
+    updated_at: Mapped[datetime] = timestamp_column()
+
+    jobs: Mapped[list["DiscoveredJob"]] = relationship(
+        back_populates="source", cascade="all, delete-orphan"
+    )
+
+
+class DiscoveredJob(Base):
+    __tablename__ = "discovered_jobs"
+    __table_args__ = (
+        CheckConstraint(
+            "availability_status IN ('ACTIVE', 'NOT_SEEN', 'UNKNOWN')",
+            name="discovered_job_availability_valid",
+        ),
+        UniqueConstraint("source_id", "provider_job_id", name="discovered_job_source_provider_unique"),
+        Index("ix_discovered_jobs_status", "availability_status"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_column()
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("discovery_sources.id", ondelete="CASCADE"), nullable=False
+    )
+    provider_job_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    company_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    job_title: Mapped[str] = mapped_column(String(255), nullable=False)
+    location: Mapped[str | None] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text)
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    content_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    first_seen_at: Mapped[datetime] = timestamp_column()
+    last_seen_at: Mapped[datetime] = timestamp_column()
+    availability_status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
+    created_at: Mapped[datetime] = timestamp_column()
+    updated_at: Mapped[datetime] = timestamp_column()
+
+    source: Mapped[DiscoverySource] = relationship(back_populates="jobs")
+
+
 class CandidateProfile(Base):
     __tablename__ = "candidate_profiles"
 

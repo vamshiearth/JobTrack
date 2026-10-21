@@ -33,7 +33,12 @@ Each accepted posting contains:
 - `source_url`
 - optional sanitized `description`
 
-Discovery remains separate from manually saved opportunities until a later step defines persistence, deduplication across refreshes, freshness state, filtering, and an explicit user import action.
+Discovery remains separate from manually saved opportunities. Persistent catalog storage is added in migration `e1f2a3b4c5d6` through two tables:
+
+- `discovery_sources` stores the validated provider and board token, enabled state, and the last successful refresh state.
+- `discovered_jobs` stores normalized postings, provider IDs, SHA-256 content fingerprints, first/last seen timestamps, and `ACTIVE`, `NOT_SEEN`, or `UNKNOWN` availability.
+
+The `(provider, board_token)` and `(source_id, provider_job_id)` constraints make refreshes idempotent. Ingestion locks the source row for the transaction, upserts jobs by provider ID, and reports created, updated, unchanged, and observed counts. Existing content is refreshed only after a successful fetch; adapter failures roll back the transaction and do not mark a source successful. Discovery never creates owner-scoped saved opportunities, applications, or `APPLICATION_SUBMITTED` events.
 
 ## Test Plan
 
@@ -41,4 +46,4 @@ Synthetic response tests cover valid normalization, duplicate IDs, missing field
 
 ## Boundaries
 
-This step does not automate applications, infer work authorization, submit employer forms, or add a database migration. Greenhouse, Lever, and Ashby remain employer-specific feeds; future integrations require their own validated source policy.
+This step does not automate applications, infer work authorization, or submit employer forms. Greenhouse, Lever, and Ashby remain employer-specific feeds; future integrations require their own validated source policy. Persistence tests run against the isolated `jobtrack_step5_test` database; the development database is not modified.

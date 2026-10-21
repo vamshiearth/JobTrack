@@ -10,6 +10,8 @@ from app.models.entities import (
     ApplicationPreparation,
     ApplicationHandoff,
     ApplicationSubmissionConfirmation,
+    DiscoveredJob,
+    DiscoverySource,
     ReviewItem,
     User,
 )
@@ -27,6 +29,8 @@ __all__ = [
     "ApplicationPreparation",
     "ApplicationHandoff",
     "ApplicationSubmissionConfirmation",
+    "DiscoveredJob",
+    "DiscoverySource",
     "ApplicationEvent",
     "ReviewItem",
     "AuthSession",
