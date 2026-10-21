@@ -380,3 +380,49 @@ class ApplicationPreparation(Base):
     opportunity: Mapped[JobOpportunity] = relationship(back_populates="preparations")
     candidate_profile: Mapped[CandidateProfile] = relationship()
     match_assessment: Mapped[JobMatchAssessment | None] = relationship()
+    handoffs: Mapped[list["ApplicationHandoff"]] = relationship(
+        back_populates="preparation", cascade="all, delete-orphan"
+    )
+    submission_confirmation: Mapped["ApplicationSubmissionConfirmation | None"] = relationship(
+        back_populates="preparation", uselist=False, cascade="all, delete-orphan"
+    )
+
+
+class ApplicationHandoff(Base):
+    __tablename__ = "application_handoffs"
+    __table_args__ = (Index("ix_application_handoffs_user_id", "user_id"),)
+
+    id: Mapped[uuid.UUID] = uuid_column()
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    preparation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("application_preparations.id", ondelete="CASCADE"), nullable=False)
+    approved_revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_url_snapshot: Mapped[str] = mapped_column(Text, nullable=False)
+    opened_at: Mapped[datetime] = mapped_column(Timestamp, nullable=False)
+    created_at: Mapped[datetime] = timestamp_column()
+
+    user: Mapped[User] = relationship()
+    preparation: Mapped[ApplicationPreparation] = relationship(back_populates="handoffs")
+
+
+class ApplicationSubmissionConfirmation(Base):
+    __tablename__ = "application_submission_confirmations"
+    __table_args__ = (
+        UniqueConstraint("preparation_id", name="submission_confirmation_preparation_unique"),
+        UniqueConstraint("idempotency_key", name="submission_confirmation_idempotency_unique"),
+        Index("ix_submission_confirmations_user_id", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_column()
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    preparation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("application_preparations.id", ondelete="CASCADE"), nullable=False)
+    handoff_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("application_handoffs.id", ondelete="SET NULL"))
+    job_application_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("job_applications.id", ondelete="CASCADE"), nullable=False)
+    confirmation_method: Mapped[str] = mapped_column(String(30), nullable=False, default="USER_ATTESTED")
+    employer_confirmation_reference: Mapped[str | None] = mapped_column(String(255))
+    confirmed_at: Mapped[datetime] = mapped_column(Timestamp, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    user: Mapped[User] = relationship()
+    preparation: Mapped[ApplicationPreparation] = relationship(back_populates="submission_confirmation")
+    job_application: Mapped[JobApplication] = relationship()
+    handoff: Mapped[ApplicationHandoff | None] = relationship()

@@ -1,6 +1,4 @@
 import uuid
-from datetime import datetime, timezone
-
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -8,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.dependencies.auth import get_current_user_id
-from app.models import ApplicationEvent
 from app.schemas.application import (
     ApplicationCreate,
     ApplicationListResponse,
@@ -18,13 +15,12 @@ from app.schemas.application import (
     NextActionOwner,
 )
 from app.services.application_service import (
-    create_application,
+    create_application_with_submission_event,
     delete_application,
     get_application,
     list_applications,
     update_application,
 )
-
 
 router = APIRouter(prefix="/applications", tags=["Applications"])
 
@@ -35,22 +31,10 @@ def create_job_application(
     user_id: uuid.UUID = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    application = create_application(db, user_id=user_id, data=payload)
-    db.add(
-        ApplicationEvent(
-            job_application_id=application.id,
-            event_kind="APPLICATION_SUBMITTED",
-            origin="MANUAL",
-            verified_by_user=True,
-            idempotency_key=f"application-created-{application.id}",
-            occurred_at=datetime.now(timezone.utc),
-        )
-    )
-    db.flush()
+    application = create_application_with_submission_event(db, user_id=user_id, data=payload)
     db.commit()
+    db.refresh(application)
     return application
-
-
 @router.get("", response_model=ApplicationListResponse)
 def get_job_applications(
     q: str | None = Query(default=None, max_length=200),

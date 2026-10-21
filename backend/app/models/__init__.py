@@ -8,6 +8,8 @@ from app.models.entities import (
     CandidateProfile,
     JobMatchAssessment,
     ApplicationPreparation,
+    ApplicationHandoff,
+    ApplicationSubmissionConfirmation,
     ReviewItem,
     User,
 )
@@ -23,6 +25,8 @@ __all__ = [
     "CandidateProfile",
     "JobMatchAssessment",
     "ApplicationPreparation",
+    "ApplicationHandoff",
+    "ApplicationSubmissionConfirmation",
     "ApplicationEvent",
     "ReviewItem",
     "AuthSession",

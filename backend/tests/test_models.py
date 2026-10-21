@@ -19,7 +19,9 @@ from app.models import (
 def test_all_expected_tables_are_registered():
     assert sorted(Base.metadata.tables) == [
         "application_events",
+        "application_handoffs",
         "application_preparations",
+        "application_submission_confirmations",
         "auth_sessions",
         "candidate_profiles",
         "email_messages",

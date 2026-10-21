@@ -9,6 +9,7 @@ import LiveDashboardPage from './pages/LiveDashboardPage'
 import LiveTimelinePage from './pages/LiveTimelinePage'
 import AddApplicationForm from './components/applications/AddApplicationForm'
 import ReviewQueuePage from './pages/ReviewQueuePage'
+import ApplicationQueuePage from './pages/ApplicationQueuePage'
 import { getBackendHealth } from './api/client'
 import { startGoogleLogin } from './api/auth'
 import { useSession } from './auth/useSession'
@@ -91,7 +92,12 @@ function App() {
   function renderPage() {
     switch (activePage) {
       case 'dashboard':
-        return <LiveDashboardPage onViewApplication={viewApplication} onViewApplications={() => navigateTo('applications')} />
+        return (
+          <LiveDashboardPage
+            onViewApplication={viewApplication}
+            onViewApplications={() => navigateTo('applications')}
+          />
+        )
       case 'applications': {
         if (isAddingApplication) {
           return (
@@ -137,6 +143,13 @@ function App() {
       case 'reviews':
         return (
           <ReviewQueuePage
+            csrfToken={session.user!.csrf_token}
+            onViewApplication={viewApplication}
+          />
+        )
+      case 'queue':
+        return (
+          <ApplicationQueuePage
             csrfToken={session.user!.csrf_token}
             onViewApplication={viewApplication}
           />

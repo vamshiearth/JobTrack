@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from app.models import JobApplication
+from app.models import ApplicationEvent, JobApplication
 from app.schemas.application import (
     ApplicationCreate,
     ApplicationStage,
@@ -33,6 +33,27 @@ def create_application(
         last_activity_at=datetime.now(timezone.utc),
     )
     db.add(application)
+    db.flush()
+    return application
+
+def create_application_with_submission_event(
+    db: Session,
+    *,
+    user_id: UUID,
+    data: ApplicationCreate,
+    occurred_at: datetime | None = None,
+) -> JobApplication:
+    application = create_application(db, user_id=user_id, data=data)
+    db.add(
+        ApplicationEvent(
+            job_application_id=application.id,
+            event_kind="APPLICATION_SUBMITTED",
+            origin="MANUAL",
+            verified_by_user=True,
+            idempotency_key=f"application-created-{application.id}",
+            occurred_at=occurred_at or datetime.now(timezone.utc),
+        )
+    )
     db.flush()
     return application
 

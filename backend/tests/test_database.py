@@ -1,5 +1,6 @@
 from sqlalchemy import text
 
+from app.core.config import get_settings
 from app.db.session import engine
 
 
@@ -23,8 +24,9 @@ def test_database_identity():
             )
         ).one()
 
-    assert result[0] == "jobtrack_db"
-    assert result[1] == "jobtrack_user"
+    settings = get_settings()
+    assert result[0] == settings.db_name
+    assert result[1] == settings.db_user
     assert result[2] == "public"
 
 
