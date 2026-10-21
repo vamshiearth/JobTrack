@@ -75,7 +75,11 @@ def test_factory_requires_configured_keys(monkeypatch):
     from app.core import config
     from app.services.gmail_token_crypto import get_gmail_token_crypto
 
-    monkeypatch.setattr(config, "get_settings", lambda: config.Settings(db_password="test"))
+    monkeypatch.setattr(
+        config,
+        "get_settings",
+        lambda: config.Settings(db_password="test", gmail_token_encryption_keys=None),
+    )
 
     with pytest.raises(GmailTokenConfigurationError):
         get_gmail_token_crypto()

@@ -75,7 +75,7 @@ def test_connect_binds_transaction_to_user_and_session(monkeypatch, context):
     with client:
         response = client.post("/api/v1/gmail/connect", headers={"Origin": "http://localhost:5173", "X-CSRF-Token": csrf})
     assert response.status_code == 200
-    transaction = context.query(GmailOAuthTransaction).one()
+    transaction = context.query(GmailOAuthTransaction).filter_by(user_id=user.id).one()
     session = context.query(AuthSession).filter_by(user_id=user.id).one()
     assert transaction.user_id == user.id
     assert transaction.auth_session_id == session.id
