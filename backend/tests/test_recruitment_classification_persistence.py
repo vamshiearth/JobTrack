@@ -66,3 +66,22 @@ def test_unmatched_message_creates_review_without_application_change(db):
     assert review is not None
     assert review.suggested_application_id is None
     assert application.current_stage == before_stage
+
+
+def test_classification_candidates_are_scoped_to_authenticated_user(db):
+    user, connection, message = seed(db)
+    own_application = JobApplication(user_id=user.id, company_name="Acme Robotics", job_title="Backend Engineer", application_source="MANUAL", current_stage="APPLIED", next_action_owner="EMPLOYER", last_activity_at=datetime.now(timezone.utc))
+    other_user = User(email=f"other-{uuid.uuid4()}@example.com", display_name="Other")
+    db.add(other_user)
+    db.flush()
+    other_application = JobApplication(user_id=other_user.id, company_name="Acme Robotics", job_title="Senior Platform Engineer", application_source="MANUAL", current_stage="APPLIED", next_action_owner="EMPLOYER", last_activity_at=datetime.now(timezone.utc))
+    db.add_all([own_application, other_application])
+    message.subject = "Acme Robotics Senior Platform Engineer interview invitation"
+    db.flush()
+
+    classify_saved_messages(db, user_id=user.id, connection_id=connection.id)
+
+    review = db.scalar(select(ReviewItem).where(ReviewItem.email_message_id == message.id))
+    assert review is not None
+    assert review.suggested_application_id == own_application.id
+    assert review.suggested_application_id != other_application.id

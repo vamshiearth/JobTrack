@@ -46,6 +46,11 @@ def test_similar_applications_are_ambiguous():
     match = match_application(subject="Acme interview", sender="recruiting@acme.com", candidates=[first, second])
     assert match.application_id is None
     assert match.ambiguous
+    classification = classify_recruitment_email(subject="Interview invitation", sender="recruiting@acme.com")
+    proposal = build_recruitment_proposal(classification, match)
+    assert proposal is not None
+    assert proposal.application_id is None
+    assert proposal.proposed_event_type is None
 
 
 def test_proposal_maps_event_without_applying_it():

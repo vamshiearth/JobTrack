@@ -30,4 +30,7 @@ def build_recruitment_proposal(classification: ClassificationResult, match: Appl
     reasons = classification.reasons + match.reasons
     if match.ambiguous:
         reasons += ("Application match requires manual selection",)
-    return RecruitmentProposal(classification.category, None if match.ambiguous else match.application_id, EVENT_MAPPING.get(classification.category), classification.confidence * match.confidence if match.application_id else classification.confidence, True, reasons)
+    application_id = None if match.ambiguous else match.application_id
+    event_type = None if match.ambiguous else EVENT_MAPPING.get(classification.category)
+    confidence = classification.confidence * match.confidence if application_id else classification.confidence
+    return RecruitmentProposal(classification.category, application_id, event_type, confidence, True, reasons)
