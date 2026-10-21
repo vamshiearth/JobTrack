@@ -47,6 +47,8 @@ async def lifespan(_: FastAPI):
             await task
 
 
+settings = get_settings()
+
 app = FastAPI(
     title="JobTrack API",
     description="Intelligent Job Application Tracking System",
@@ -55,10 +57,11 @@ app = FastAPI(
 )
 register_error_handlers(app)
 
-allowed_origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+allowed_origins = {
+    origin.rstrip("/")
+    for origin in settings.auth_trusted_origins
+}
+allowed_origins.add(settings.auth_frontend_url.rstrip("/"))
 
 app.add_middleware(
     CORSMiddleware,
