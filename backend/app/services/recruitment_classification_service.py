@@ -40,8 +40,8 @@ def classify_saved_messages(db: Session, *, user_id: UUID, connection_id: UUID) 
             continue
         if match.ambiguous:
             ambiguous += 1
-        pending = db.scalar(select(ReviewItem).where(ReviewItem.email_message_id == message.id, ReviewItem.review_status == "PENDING").with_for_update())
-        if pending is not None:
+        existing_review = db.scalar(select(ReviewItem).where(ReviewItem.email_message_id == message.id).with_for_update())
+        if existing_review is not None:
             skipped += 1
             continue
         db.add(ReviewItem(user_id=user_id, email_message_id=message.id, suggested_application_id=proposal.application_id, suggested_event_kind=proposal.proposed_event_type, confidence=Decimal(str(min(proposal.confidence, 0.999))), reason="; ".join(proposal.reasons), review_status="PENDING"))
