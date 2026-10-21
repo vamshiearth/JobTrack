@@ -20,11 +20,13 @@ def test_all_expected_tables_are_registered():
     assert sorted(Base.metadata.tables) == [
         "application_events",
         "auth_sessions",
+        "candidate_profiles",
         "email_messages",
         "gmail_connections",
         "gmail_oauth_transactions",
         "gmail_sync_states",
         "job_applications",
+        "job_match_assessments",
         "job_opportunities",
         "oauth_login_transactions",
         "review_items",

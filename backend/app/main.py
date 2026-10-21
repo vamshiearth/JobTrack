@@ -10,13 +10,46 @@ from app.api.v1.events import router as events_router
 from app.api.v1.gmail import router as gmail_router
 from app.api.v1.review_items import router as review_items_router
 from app.api.v1.opportunities import router as opportunities_router
+from app.api.v1.matching import router as matching_router
 from app.core.error_handlers import register_error_handlers
+from app.core.config import get_settings
+from app.db.session import SessionLocal
+from app.models import GmailConnection
+from app.services.gmail_sync_service import sync_gmail_connection
+from sqlalchemy import select
+
+
+async def gmail_sync_loop() -> None:
+    settings = get_settings()
+    while True:
+        await asyncio.sleep(settings.gmail_sync_interval_seconds)
+        if not settings.gmail_sync_enabled:
+            continue
+        with SessionLocal() as db:
+            connections = db.scalars(select(GmailConnection).where(GmailConnection.connection_status == "CONNECTED")).all()
+            for connection in connections:
+                try:
+                    sync_gmail_connection(db, user_id=connection.user_id, connection_id=connection.id)
+                except Exception:
+                    db.rollback()
+
+
+@contextlib.asynccontextmanager
+async def lifespan(_: FastAPI):
+    task = asyncio.create_task(gmail_sync_loop())
+    try:
+        yield
+    finally:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
 
 
 app = FastAPI(
     title="JobTrack API",
     description="Intelligent Job Application Tracking System",
     version="0.1.0",
+    lifespan=lifespan,
 )
 register_error_handlers(app)
 

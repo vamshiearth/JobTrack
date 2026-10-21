@@ -56,6 +56,9 @@ class User(Base):
     review_items: Mapped[list["ReviewItem"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    candidate_profile: Mapped["CandidateProfile | None"] = relationship(
+        back_populates="user", cascade="all, delete-orphan", uselist=False
+    )
 
 
 class GmailConnection(Base):
@@ -285,3 +288,59 @@ class JobOpportunity(Base):
     updated_at: Mapped[datetime] = timestamp_column()
 
     user: Mapped[User] = relationship()
+
+
+class CandidateProfile(Base):
+    __tablename__ = "candidate_profiles"
+
+    id: Mapped[uuid.UUID] = uuid_column()
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    skills: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, default=list)
+    experience_summary: Mapped[str | None] = mapped_column(Text)
+    target_roles: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, default=list)
+    preferred_locations: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, default=list)
+    remote_preference: Mapped[str | None] = mapped_column(String(20))
+    resume_version: Mapped[str] = mapped_column(String(255), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = timestamp_column()
+    updated_at: Mapped[datetime] = timestamp_column()
+
+    user: Mapped[User] = relationship(back_populates="candidate_profile")
+    assessments: Mapped[list["JobMatchAssessment"]] = relationship(
+        back_populates="candidate_profile", cascade="all, delete-orphan"
+    )
+
+
+class JobMatchAssessment(Base):
+    __tablename__ = "job_match_assessments"
+    __table_args__ = (
+        UniqueConstraint(
+            "opportunity_id", "candidate_profile_id", "profile_revision",
+            name="job_match_assessment_revision_unique",
+        ),
+        Index("ix_job_match_assessments_opportunity_id", "opportunity_id"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_column()
+    opportunity_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("job_opportunities.id", ondelete="CASCADE"), nullable=False
+    )
+    candidate_profile_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("candidate_profiles.id", ondelete="CASCADE"), nullable=False
+    )
+    profile_revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    opportunity_updated_at: Mapped[datetime] = mapped_column(Timestamp, nullable=False)
+    scoring_model_version: Mapped[str] = mapped_column(String(50), nullable=False)
+    score: Mapped[int | None] = mapped_column(Integer)
+    evidence_coverage: Mapped[Decimal] = mapped_column(Numeric(5, 4), nullable=False)
+    matched_skills: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, default=list)
+    unverified_requirements: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, default=list)
+    explanations: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, default=list)
+    eligibility_status: Mapped[str] = mapped_column(String(30), nullable=False)
+    ranking_status: Mapped[str] = mapped_column(String(30), nullable=False)
+    created_at: Mapped[datetime] = timestamp_column()
+
+    opportunity: Mapped[JobOpportunity] = relationship()
+    candidate_profile: Mapped[CandidateProfile] = relationship(back_populates="assessments")
