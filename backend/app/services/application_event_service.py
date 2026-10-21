@@ -44,6 +44,9 @@ def record_application_event(
     user_id: UUID,
     application_id: UUID,
     data: ApplicationEventCreate,
+    origin: str = "MANUAL",
+    verified_by_user: bool = True,
+    source_email_message_id: UUID | None = None,
 ) -> tuple[ApplicationEvent, bool]:
     application = db.scalar(
         select(JobApplication)
@@ -72,7 +75,7 @@ def record_application_event(
 
     if application.current_stage in CLOSED_STAGES:
         raise EventConflict("closed applications cannot receive ordinary events")
-    if data.event_kind == EventKind.APPLICATION_SUBMITTED:
+    if data.event_kind == EventKind.APPLICATION_SUBMITTED and origin == "MANUAL":
         raise EventConflict("application submission is recorded during application creation")
 
     prerequisite = {
@@ -92,18 +95,20 @@ def record_application_event(
     stage, owner = get_status_for_event(data.event_kind)
     event = ApplicationEvent(
         job_application_id=application_id,
+        source_email_message_id=source_email_message_id,
         event_kind=data.event_kind.value,
         interview_round=data.interview_round,
-        origin="MANUAL",
-        verified_by_user=True,
+        origin=origin,
+        verified_by_user=verified_by_user,
         details=data.details,
         idempotency_key=key,
         occurred_at=data.occurred_at.astimezone(timezone.utc),
     )
     db.add(event)
-    application.current_stage = stage
-    application.next_action_owner = owner
-    application.last_activity_at = datetime.now(timezone.utc)
+    if origin == "MANUAL" or data.occurred_at.astimezone(timezone.utc) >= application.last_activity_at:
+        application.current_stage = stage
+        application.next_action_owner = owner
+        application.last_activity_at = data.occurred_at.astimezone(timezone.utc)
     application.updated_at = datetime.now(timezone.utc)
     db.flush()
     return event, True

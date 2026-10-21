@@ -29,6 +29,7 @@ from app.services.recruitment_classification_service import (
     ClassificationNotEligible,
     classify_saved_messages,
 )
+from app.services.gmail_application_tracker import track_application_confirmations
 
 router = APIRouter(prefix="/gmail", tags=["Gmail"])
 CONSENT_COOKIE = "jobtrack_gmail_consent"
@@ -159,4 +160,21 @@ def classify(context: AuthContext = Depends(get_auth_context), db: Session = Dep
         result = classify_saved_messages(db, user_id=context.user.id, connection_id=item.id)
     except ClassificationNotEligible as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    return result.__dict__
+
+
+@router.post("/tracker/refresh")
+def refresh_tracker(context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)):
+    item = db.scalar(select(GmailConnection).where(GmailConnection.user_id == context.user.id))
+    if item is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Gmail is not connected")
+    try:
+        sync_gmail_connection(db, user_id=context.user.id, connection_id=item.id)
+        result = track_application_confirmations(db, user_id=context.user.id, connection_id=item.id)
+    except GmailSyncBusy as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except GmailSyncNotEligible as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except GmailSyncUnavailable as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     return result.__dict__

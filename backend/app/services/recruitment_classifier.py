@@ -72,11 +72,13 @@ RECRUITER_CONTACT_PATTERNS = (
     r"\bstill interested in (?:these )?jobs?\b",
 )
 
-OFFER_PATTERNS = (r"\bjob offer\b", r"\boffer letter\b", r"\bpleased to offer\b")
+OFFER_PATTERNS = (r"\bjob offer\b", r"\boffer letter\b", r"\boffer of employment\b", r"\bpleased to offer\b")
 REJECTION_PATTERNS = (
     r"\bnot moving forward\b",
     r"\bregret to inform\b",
     r"\bapplication status update\b",
+    r"\bnot selected\b",
+    r"\bposition (?:has been )?filled\b",
 )
 
 

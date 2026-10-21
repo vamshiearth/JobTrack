@@ -8,6 +8,7 @@ import LiveApplicationDetailPage from './pages/LiveApplicationDetailPage'
 import LiveDashboardPage from './pages/LiveDashboardPage'
 import LiveTimelinePage from './pages/LiveTimelinePage'
 import DiscoveryPage from './pages/DiscoveryPage'
+import GmailTrackerPage from './pages/GmailTrackerPage'
 import AddApplicationForm from './components/applications/AddApplicationForm'
 import ReviewQueuePage from './pages/ReviewQueuePage'
 import ApplicationQueuePage from './pages/ApplicationQueuePage'
@@ -99,6 +100,8 @@ function App() {
             onViewApplications={() => navigateTo('applications')}
           />
         )
+      case 'gmail-tracker':
+        return <GmailTrackerPage csrfToken={session.user!.csrf_token} />
       case 'discovery':
         return <DiscoveryPage csrfToken={session.user!.csrf_token} />
       case 'applications': {

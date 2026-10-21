@@ -65,3 +65,16 @@ export function triggerGmailSync(csrfToken: string) {
     headers: { 'X-CSRF-Token': csrfToken },
   })
 }
+
+export function refreshGmailTracker(csrfToken: string) {
+  return request<{
+    scanned: number
+    applications_added: number
+    applications_matched: number
+    needs_review: number
+    status_changes: number
+  }>('/tracker/refresh', {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrfToken },
+  })
+}
