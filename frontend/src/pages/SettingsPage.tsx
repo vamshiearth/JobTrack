@@ -9,6 +9,7 @@ import {
   type GmailSyncStatus,
 } from '../api/gmail'
 import { useSession } from '../auth/useSession'
+import CandidateProfileEditor from '../components/profile/CandidateProfileEditor'
 
 export default function SettingsPage() {
   const session = useSession()
@@ -86,6 +87,7 @@ export default function SettingsPage() {
   return (
     <section className='page-section'>
       <h2>Settings</h2>
+      <CandidateProfileEditor csrfToken={session.user?.csrf_token ?? ''} />
       <div className='settings-panel'>
         <h3>Gmail connection</h3>
         <p>

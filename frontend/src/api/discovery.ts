@@ -44,9 +44,13 @@ export interface RefreshResult {
   observed: number
 }
 
-export function searchDiscovery(params: Record<string, string | number>) {
+export function searchDiscovery(
+  params: Record<string, string | number | undefined>,
+) {
   const query = new URLSearchParams(
-    Object.entries(params).map(([key, value]) => [key, String(value)]),
+    Object.entries(params)
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => [key, String(value)]),
   )
   return apiRequest<DiscoverySearchResponse>(`/api/v1/discovery/jobs?${query}`)
 }

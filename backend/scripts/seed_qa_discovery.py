@@ -54,6 +54,19 @@ FIXTURES = (
     },
 )
 
+PAGINATION_FIXTURES = tuple(
+    {
+        "provider_job_id": f"qa-job-{index:03d}",
+        "company_name": f"Pagination Demo {index}",
+        "job_title": f"Synthetic QA Role {index}",
+        "location": "Boston, MA" if index % 2 else "United States",
+        "description": "Synthetic QA pagination fixture. Java and REST APIs.",
+    }
+    for index in range(6, 14)
+)
+
+ALL_FIXTURES = FIXTURES + PAGINATION_FIXTURES
+
 
 def _opportunity(fixture: dict[str, str | None]) -> DiscoveredOpportunity:
     source_url = trusted_job_url(
@@ -102,7 +115,7 @@ def seed() -> None:
 
         now = datetime.now(timezone.utc)
         source.next_refresh_at = now + timedelta(days=365)
-        for fixture in FIXTURES:
+        for fixture in ALL_FIXTURES:
             opportunity = _opportunity(fixture)
             existing = db.scalar(
                 select(DiscoveredJob).where(
@@ -135,7 +148,7 @@ def seed() -> None:
             existing.availability_status = "ACTIVE"
 
         db.commit()
-        print(f"Seeded {len(FIXTURES)} synthetic discovery jobs in {database_name}")
+        print(f"Seeded {len(ALL_FIXTURES)} synthetic discovery jobs in {database_name}")
 
 
 if __name__ == "__main__":

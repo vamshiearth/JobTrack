@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import {
   getDiscoverySources,
   refreshDiscoverySource,
@@ -17,6 +23,7 @@ export default function DiscoveryPage({ csrfToken }: Props) {
   const [sources, setSources] = useState<DiscoverySource[]>([])
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('')
+  const [location, setLocation] = useState('')
   const [remote, setRemote] = useState('')
   const [sort, setSort] = useState('match_score')
   const [offset, setOffset] = useState(0)
@@ -27,45 +34,49 @@ export default function DiscoveryPage({ csrfToken }: Props) {
   const [refreshing, setRefreshing] = useState<string | null>(null)
   const debounce = useRef<number | undefined>(undefined)
 
-  async function load(currentQuery = query) {
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await searchDiscovery({
-        q: currentQuery,
-        category,
-        remote,
-        sort,
-        limit: 12,
-        offset,
-      })
-      setJobs(result.items)
-      setTotal(result.total)
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : 'Could not load discovered jobs',
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
+  const load = useCallback(
+    async (currentQuery = query, currentOffset = offset) => {
+      setLoading(true)
+      setError(null)
+      try {
+        const result = await searchDiscovery({
+          q: currentQuery,
+          category,
+          location,
+          remote,
+          sort,
+          limit: 12,
+          offset: currentOffset,
+        })
+        setJobs(result.items)
+        setTotal(result.total)
+      } catch (cause) {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : 'Could not load discovered jobs',
+        )
+      } finally {
+        setLoading(false)
+      }
+    },
+    [category, location, offset, query, remote, sort],
+  )
 
   useEffect(() => {
     void getDiscoverySources()
-      .then(setSources)
+      .then((nextSources) => {
+        startTransition(() => setSources(nextSources))
+      })
       .catch(() => undefined)
-    void load()
   }, [])
   useEffect(() => {
     window.clearTimeout(debounce.current)
     debounce.current = window.setTimeout(() => {
-      setOffset(0)
-      void load(query)
+      void load(query, offset)
     }, 300)
     return () => window.clearTimeout(debounce.current)
-  }, [query, category, remote, sort])
+  }, [query, category, location, offset, remote, sort, load])
 
   async function save(job: DiscoveryJob) {
     setSaving((state) => ({ ...state, [job.id]: true }))
@@ -113,12 +124,18 @@ export default function DiscoveryPage({ csrfToken }: Props) {
           aria-label='Search jobs'
           placeholder='Search title or employer'
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            setOffset(0)
+            setQuery(event.target.value)
+          }}
         />
         <select
           aria-label='Category'
           value={category}
-          onChange={(event) => setCategory(event.target.value)}
+          onChange={(event) => {
+            setOffset(0)
+            setCategory(event.target.value)
+          }}
         >
           <option value=''>All categories</option>
           <option value='CPQ'>Oracle CPQ</option>
@@ -129,17 +146,33 @@ export default function DiscoveryPage({ csrfToken }: Props) {
         <select
           aria-label='Work arrangement'
           value={remote}
-          onChange={(event) => setRemote(event.target.value)}
+          onChange={(event) => {
+            setOffset(0)
+            setRemote(event.target.value)
+          }}
         >
           <option value=''>All work types</option>
           <option value='REMOTE'>Remote</option>
           <option value='HYBRID'>Hybrid</option>
           <option value='ONSITE'>Onsite</option>
+          <option value='UNKNOWN'>Unknown</option>
         </select>
+        <input
+          aria-label='Location'
+          placeholder='Location'
+          value={location}
+          onChange={(event) => {
+            setOffset(0)
+            setLocation(event.target.value)
+          }}
+        />
         <select
           aria-label='Sort'
           value={sort}
-          onChange={(event) => setSort(event.target.value)}
+          onChange={(event) => {
+            setOffset(0)
+            setSort(event.target.value)
+          }}
         >
           <option value='match_score'>Best match</option>
           <option value='newest'>Newest</option>
@@ -235,7 +268,7 @@ export default function DiscoveryPage({ csrfToken }: Props) {
             disabled={offset === 0}
             onClick={() => {
               setOffset(Math.max(0, offset - 12))
-              void load()
+              void load(query, Math.max(0, offset - 12))
             }}
           >
             Previous
@@ -248,7 +281,7 @@ export default function DiscoveryPage({ csrfToken }: Props) {
             disabled={offset + 12 >= total}
             onClick={() => {
               setOffset(offset + 12)
-              void load()
+              void load(query, offset + 12)
             }}
           >
             Next

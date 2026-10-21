@@ -44,7 +44,16 @@ def search_discovered_jobs(
     if location:
         predicates.append(DiscoveredJob.location.ilike(f"%{location}%"))
     if remote:
-        predicates.append(DiscoveredJob.work_arrangement == remote.upper())
+        arrangement = remote.upper()
+        if arrangement == "UNKNOWN":
+            predicates.append(
+                or_(
+                    DiscoveredJob.work_arrangement.is_(None),
+                    DiscoveredJob.work_arrangement == "UNKNOWN",
+                )
+            )
+        else:
+            predicates.append(DiscoveredJob.work_arrangement == arrangement)
     if status:
         predicates.append(DiscoveredJob.availability_status == status.upper())
     if source_id:

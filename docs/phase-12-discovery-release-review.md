@@ -10,27 +10,63 @@
 
 ## Browser Verification
 
-The frontend source is served successfully by the existing Vite process on `localhost:5173` (`HTTP 200`). A fresh launch from `frontend` with `--strictPort` reported `Port 5173 is already in use`; the listener is a Node process owned by this workspace environment and was not terminated.
+The frontend source is served successfully by the existing Vite process on `localhost:5175` (`HTTP 200`). A fresh launch on the occupied development port was not used; the existing QA frontend was preserved.
 
-The active backend on `localhost:8000` is PID `20216`, running an older Uvicorn instance whose OpenAPI schema contains no discovery paths. It was left running because it was not safe to terminate an unrelated/stale process. The current backend was started separately on `localhost:8004` with `DB_NAME=jobtrack_step5_test`; its OpenAPI schema includes all four discovery routes, and the database identity plus Alembic head were verified as `jobtrack_step5_test` and `a3b4c5d6e7f8`.
+The active backend on `localhost:8000` remains a separate older Uvicorn instance and was not terminated. The QA backend was restarted separately on `localhost:8004` with `DB_NAME=jobtrack_step5_test`; its OpenAPI schema includes the candidate-profile and discovery routes, and Alembic is at `a3b4c5d6e7f8`.
 
-The frontend was started separately on `localhost:5175` with `VITE_API_BASE_URL=http://localhost:8004`. CORS was corrected to use the existing trusted-origin settings, and the QA backend was run with `http://localhost:5175` as a temporary trusted origin. Google OAuth was verified with the isolated QA account `vamshiboston@gmail.com`; the callback returned through `localhost:8004`, the authenticated Discovery page loaded, and logout returned to the sign-in screen.
+The frontend uses `VITE_API_BASE_URL=http://localhost:8004`. CORS was corrected to allow `PUT`; a live preflight from `http://localhost:5175` returned `200` with `Access-Control-Allow-Origin`, `PUT`, credentials, and `X-CSRF-Token` permitted. Google OAuth was verified with the isolated QA account `vamshiboston@gmail.com`.
 
 The guarded QA seed script at `backend/scripts/seed_qa_discovery.py` requires `QA_SEED_ENABLED=true`, verifies `current_database()` is `jobtrack_step5_test`, uses the existing `DiscoverySource` and `DiscoveredJob` models, and is idempotent for the `qa_fixture` source. It created these synthetic records only: Example Systems / Oracle CPQ Developer (remote, United States), Demo Robotics / Java Backend Engineer (hybrid, Boston, MA), Sample Analytics / Data Engineer (onsite, Boston, MA), Fictional Technologies / Associate Software Engineer (unknown location and arrangement), and Test Cloud Inc. / Python Backend Developer (remote, Massachusetts). No live provider request was made.
 
-Populated Discovery verification completed: the unfiltered catalog showed five roles; `Oracle CPQ` returned only Example Systems; Java returned Demo Robotics; Data Engineer returned Sample Analytics; onsite returned Sample Analytics; hybrid returned Demo Robotics; remote returned Example Systems and Test Cloud Inc.; nonexistent search showed the genuine empty state; and clear-all returned all five. The remote cards preserved distinct `United States` and `Massachusetts` locations. The UI search covers title/employer only, so `Boston` returned no rows; the UI has no location or `UNKNOWN` arrangement option, so those browser checks were unavailable rather than passed.
+Populated Discovery verification completed against thirteen roles. Location `Boston` returned six Boston-only records; arrangement `Unknown` returned only Fictional Technologies / Associate Software Engineer. Clearing filters showed twelve cards on page one, and page two showed only `Data Engineer` (`13-13 of 13`). Changing Location on page two reset to the first filtered page. Remote results preserved geographic restrictions.
 
-Every card displayed `NEEDS_PROFILE` with no fabricated score. The QA account has no candidate profile (`GET /api/v1/candidate-profile` returned `404`), and the current UI has no profile editor, so numeric ranking and deterministic scored ordering were not tested. The UI uses a fixed limit of 12 and exposes no page-size selector; with five jobs it renders one page, so the requested 2/2/1 pagination distribution is not applicable. Controlled provider failure and scheduler persistence tests passed backend-only (`9 passed`), but browser refresh-error presentation was not injected. A direct QA database check reported five discovered jobs, one saved opportunity, zero `job_applications`, and zero `application_events`; Oracle's second save state rendered as disabled `Saved`, preserving one opportunity.
+The candidate profile editor saved the synthetic QA profile successfully and displayed confirmed revision `1`; profile values persisted through navigation. Discovery then displayed numeric scores and confirmed matched skills where evidence was sufficient, while insufficient-evidence cards remained explicitly labeled. The fixed page size remains 12. Blocking the refresh request in the browser produced `Failed to fetch` while preserving all 12 visible job cards; removing the block restored normal operation. Controlled provider failure and scheduler persistence tests remain separately covered by backend tests. Applications and submission events remained zero, and the existing saved opportunity rendered as disabled `Saved` on repeat save.
 
 ## Validation
 
 - Backend: `233 passed`.
-- Scheduler lease tests: `3 passed`.
+- Focused discovery/scheduler/matching tests: `14 passed`.
 - Compilation: passed.
 - Alembic current/check: passed after constraint-name alignment.
 - Frontend production build: passed.
-- Frontend lint: passed with no warnings after moving filter page resets to filter events and keeping source synchronization non-urgent.
+- Frontend lint: passed with no warnings after preserving the pagination offset in the discovery loading effect.
+
+## Final Phase 12 Acceptance
+
+### Verified
+
+- QA backend and authenticated frontend connected.
+- CORS PUT preflight: `200`.
+- Candidate profile revision `1` persisted.
+- Boston filter: 6 roles.
+- Unknown arrangement: 1 expected role.
+- Pagination: 12 + 1 roles.
+- Filter reset from page 2: passed.
+- Numeric ranking and matched evidence: passed.
+- Applications created: 0.
+- Submission events created: 0.
+- Backend tests: 233 passed.
+- Frontend lint and build: passed.
+- Python compilation: passed.
+- Alembic: clean.
+- Blocked refresh preserved existing cards and displayed a request error.
+
+### Refresh Failure Handling
+
+- Backend failure preservation: passed automated tests.
+- Frontend request failure: passed with controlled browser request blocking.
+
+### Release Boundary
+
+- Development backend on `8000` preserved.
+- QA backend on `8004` verified.
+- Unrelated worktree edits preserved.
+- Intended Phase 12 files staged separately from unrelated changes.
+
+### Release Decision
+
+Functional acceptance passed. The Phase 12 implementation is ready for a selective commit.
 
 ## Limitations
 
-The scheduler is provided as an explicit worker module and remains disabled during QA. Location/unknown browser controls, numeric ranking, 2/2/1 pagination, and browser-injected refresh failure remain unverified or unavailable in the current UI. No live provider or employer application submission was performed.
+The scheduler is provided as an explicit worker module and remains disabled during QA. No live provider or employer application submission was performed.
